@@ -18,7 +18,7 @@ if not all([APP_ID, DEVICE_ID]):
 
 
 class TestIotCentral(LiveScenarioTest):
-    def __init__(self, test_method):  # pylint: disable=W0613
+    def __init__(self, test_method):
         super(TestIotCentral, self).__init__('test_central_device_show')
 
     def test_central_device_show(self):
