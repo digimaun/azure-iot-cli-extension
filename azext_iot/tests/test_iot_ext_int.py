@@ -8,20 +8,18 @@ import os
 import random
 import json
 import pytest
-import sys
 
 from uuid import uuid4
 from azure.cli.testsdk import LiveScenarioTest
 from azure.cli.core.util import read_file_content
-from azext_iot.common.utility import (
+
+# Temporary workaround - we need to remove all reference to azext_iot in int tests.
+from . import (
     validate_min_python_version,
     execute_onthread,
     calculate_millisec_since_unix_epoch_utc,
+    DEVICE_DEVICESCOPE_PREFIX
 )
-from azext_iot._constants import DEVICE_DEVICESCOPE_PREFIX
-
-# Add test tools to path
-sys.path.append(os.path.abspath(os.path.join(".", "iotext_test_tools")))
 
 # Set these to the proper IoT Hub, IoT Hub Cstring and Resource Group for Live Integration Tests.
 LIVE_HUB = os.environ.get("azext_iot_testhub")
