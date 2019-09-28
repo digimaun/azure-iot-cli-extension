@@ -14,7 +14,7 @@ from setuptools import setup, find_packages
 EXTENSION_REF_NAME = "azext_iot"
 
 # Version extraction inspired from 'requests'
-with open(os.path.join(EXTENSION_REF_NAME, "_constants.py"), "r", encoding="utf-8") as fd:
+with open(os.path.join(EXTENSION_REF_NAME, "constants.py"), "r", encoding="utf-8") as fd:
     constants_raw = fd.read()
     VERSION = re.search(
         r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', constants_raw, re.MULTILINE

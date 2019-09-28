@@ -7,7 +7,7 @@
 from os.path import exists
 from knack.util import CLIError
 from azure.cli.core.util import read_file_content
-from azext_iot._constants import PNP_ENDPOINT
+from azext_iot.constants import PNP_ENDPOINT
 from azext_iot._factory import _bind_sdk
 from azext_iot.common.shared import SdkType, ModelSourceType
 from azext_iot.common._azure import get_iot_hub_connection_string

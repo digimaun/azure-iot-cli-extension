@@ -18,7 +18,7 @@ from msrest.pipeline import ClientRawResponse
 from msrestazure import AzureConfiguration
 from . import models
 from .version import VERSION
-from azext_iot._constants import VERSION as extver
+from azext_iot.constants import VERSION as extver
 
 
 class CustomAPIConfiguration(AzureConfiguration):

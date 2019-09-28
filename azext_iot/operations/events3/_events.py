@@ -14,7 +14,7 @@ import six
 import uamqp
 import yaml
 
-from azext_iot._constants import VERSION
+from azext_iot.constants import VERSION
 from azext_iot.common.utility import parse_entity, unicode_binary_map
 from knack.log import get_logger
 from azext_iot.operations.events3._builders import AmqpBuilder

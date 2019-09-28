@@ -13,9 +13,10 @@ from random import randint
 from azext_iot.operations import hub as subject
 from azext_iot.common.utility import evaluate_literal, validate_min_python_version
 from azext_iot.common.sas_token_auth import SasTokenAuthentication
-from azext_iot._constants import TRACING_PROPERTY
+from azext_iot.constants import TRACING_PROPERTY
 from knack.util import CLIError
 from azure.cli.core.util import read_file_content
+from .conftest import fixture_cmd
 
 
 device_id = "mydevice"
@@ -60,14 +61,6 @@ path_iot_hub_service_factory = "azext_iot.common._azure.iot_hub_service_factory"
 path_sas = "azext_iot._factory.SasTokenAuthentication"
 
 # TODO generalize all fixtures across DPS/Hub unit tests
-
-
-@pytest.fixture()
-def fixture_cmd(mocker):
-    # Placeholder for later use
-    mocker.patch(path_iot_hub_service_factory)
-    cmd = mocker.MagicMock(name="cli cmd context")
-    return cmd
 
 
 @pytest.fixture()

@@ -288,7 +288,7 @@ def get_iot_pnp_connection_string(
 
     from azure.cli.command_modules.iot.digitaltwinrepositoryprovisioningservice import DigitalTwinRepositoryProvisioningService
     from azure.cli.command_modules.iot._utils import get_auth_header
-    from azext_iot._constants import PNP_REPO_ENDPOINT
+    from azext_iot.constants import PNP_REPO_ENDPOINT
 
     result = {}
     client = None
