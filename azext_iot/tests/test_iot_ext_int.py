@@ -37,6 +37,11 @@ SECONDARY_THUMBPRINT = "14963E8F3BA5B3984110B3C1CA8E8B8988599087"
 
 
 class TestIoTHub(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTHub, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_hub(self):
         self.cmd(
             "az iot hub generate-sas-token -n {} -g {}".format(LIVE_HUB, LIVE_RG),
@@ -110,9 +115,12 @@ class TestIoTHubDevices(IoTLiveScenarioTest):
         )
 
     def test_hub_devices(self):
-        device_ids = self.generate_device_names(count=5)
-        edge_device_ids = self.generate_device_names(edge=True, count=2)
-        total_devices = len(device_ids) + len(edge_device_ids)
+        device_count = 5
+        edge_device_count = 2
+
+        device_ids = self.generate_device_names(device_count)
+        edge_device_ids = self.generate_device_names(edge_device_count, edge=True)
+        total_devices = device_count + edge_device_count
 
         self.cmd(
             "iot hub device-identity create -d {} -n {} -g {}".format(
@@ -159,7 +167,7 @@ class TestIoTHubDevices(IoTLiveScenarioTest):
             )
 
         # All edge devices + child device
-        query_checks = [self.check("length([*])", len(edge_device_ids) + 1)]
+        query_checks = [self.check("length([*])", edge_device_count + 1)]
         for i in edge_device_ids:
             query_checks.append(
                 self.exists("[?deviceId==`{}`]".format(i))
@@ -345,13 +353,13 @@ class TestIoTHubDevices(IoTLiveScenarioTest):
         # List only edge devices
         self.cmd(
             "iot hub device-identity list -n {} -g {} --ee".format(LIVE_HUB, LIVE_RG),
-            checks=[self.check("length([*])", len(edge_device_ids))],
+            checks=[self.check("length([*])", edge_device_count)],
         )
 
         # With connection string
         self.cmd(
             "iot hub device-identity list --ee --login {}".format(LIVE_HUB_CS),
-            checks=[self.check("length([*])", len(edge_device_ids))],
+            checks=[self.check("length([*])", edge_device_count)],
         )
 
         self.cmd(
@@ -483,20 +491,24 @@ class TestIoTHubDevices(IoTLiveScenarioTest):
 
 
 class TestIoTHubDeviceTwins(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTHubDeviceTwins, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_hub_device_twins(self):
         self.kwargs["generic_dict"] = {"key": "value"}
         self.kwargs["bad_format"] = "{'key: 'value'}"
+
         device_count = 3
+        device_ids = self.generate_device_names(device_count)
 
-        names = self._create_entity_names(devices=device_count)
-        device_ids = names["device_ids"]
-
-        for i in range(device_count):
+        for device in device_ids:
             self.cmd(
                 "iot hub device-identity create -d {} -n {} -g {}".format(
-                    device_ids[i], LIVE_HUB, LIVE_RG
+                    device, LIVE_HUB, LIVE_RG
                 ),
-                checks=[self.check("deviceId", device_ids[i])],
+                checks=[self.check("deviceId", device)],
             )
 
         self.cmd(
@@ -532,6 +544,7 @@ class TestIoTHubDeviceTwins(IoTLiveScenarioTest):
         assert result["deviceId"] == device_ids[0]
         assert result["properties"]["desired"]["special"]["key"] == "value"
 
+        # Removal of desired property from twin
         result = self.cmd(
             'iot hub device-twin update -d {} -n {} -g {} --set properties.desired.special="null"'.format(
                 device_ids[0], LIVE_HUB, LIVE_RG
@@ -599,7 +612,7 @@ class TestIoTHubDeviceTwins(IoTLiveScenarioTest):
             ],
         )
 
-        # TODO
+        # TODO move distributed tracing tests
         self.cmd(
             "iot hub distributed-tracing show -d {} -n {} -g {}".format(
                 device_ids[2], LIVE_HUB, LIVE_RG
@@ -619,17 +632,19 @@ class TestIoTHubDeviceTwins(IoTLiveScenarioTest):
 
 
 class TestIoTHubModules(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTHubModules, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_hub_modules(self):
         edge_device_count = 2
         device_count = 1
         module_count = 2
 
-        names = self._create_entity_names(
-            edge_devices=edge_device_count, devices=device_count, modules=module_count
-        )
-        edge_device_ids = names["edge_device_ids"]
-        module_ids = names["module_ids"]
-        device_ids = names["device_ids"]
+        edge_device_ids = self.generate_device_names(edge_device_count, edge=True)
+        device_ids = self.generate_device_names(device_count)
+        module_ids = self.generate_module_names(module_count)
 
         for edge_device in edge_device_ids:
             self.cmd(
@@ -888,7 +903,7 @@ class TestIoTHubModules(IoTLiveScenarioTest):
         )
 
         for i in module_ids:
-            if module_ids.index(i) == (len(module_ids) - 1):
+            if module_ids.index(i) == (module_count - 1):
                 # With connection string
                 self.cmd(
                     "iot hub module-identity delete -d {} --login {} --module-id {}".format(
@@ -906,19 +921,22 @@ class TestIoTHubModules(IoTLiveScenarioTest):
 
 
 class TestIoTHubModuleTwins(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTHubModuleTwins, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_hub_module_twins(self):
         self.kwargs["generic_dict"] = {"key": "value"}
         self.kwargs["bad_format"] = "{'key: 'value'}"
+
         edge_device_count = 1
         device_count = 1
         module_count = 1
 
-        names = self._create_entity_names(
-            edge_devices=edge_device_count, modules=module_count, devices=device_count
-        )
-        edge_device_ids = names["edge_device_ids"]
-        module_ids = names["module_ids"]
-        device_ids = names["device_ids"]
+        edge_device_ids = self.generate_device_names(edge_device_count, True)
+        device_ids = self.generate_device_names(device_count)
+        module_ids = self.generate_module_names(module_count)
 
         self.cmd(
             "iot hub device-identity create -d {} -n {} -g {} --ee".format(
@@ -1076,12 +1094,17 @@ class TestIoTHubModuleTwins(IoTLiveScenarioTest):
 
 
 class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTHubDeviceConfigs, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_device_configurations(self):
         self.kwargs["generic_dict"] = {"key": "value"}
         self.kwargs["bad_format"] = "{'key: 'value'}"
+
         config_count = 5
-        names = self._create_entity_names(configs=config_count)
-        config_ids = names["config_ids"]
+        config_ids = self.generate_config_names(config_count)
 
         content_path = os.path.join(CWD, "test_config_device_content.json")
         metrics_path = os.path.join(CWD, "test_config_device_metrics.json")
@@ -1397,10 +1420,14 @@ class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
 
 
 class TestIoTEdge(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTEdge, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_edge_set_modules(self):
         edge_device_count = 2
-        names = self._create_entity_names(edge_devices=edge_device_count)
-        edge_device_ids = names["edge_device_ids"]
+        edge_device_ids = self.generate_device_names(edge_device_count, True)
 
         for device_id in edge_device_ids:
             self.cmd(
@@ -1450,11 +1477,16 @@ class TestIoTEdge(IoTLiveScenarioTest):
 
 
 class TestIoTEdgeDeployments(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTEdgeDeployments, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_edge_deployments(self):
         self.kwargs["generic_dict"] = {"key": "value"}
+
         config_count = 3
-        names = self._create_entity_names(configs=config_count)
-        config_ids = names["config_ids"]
+        config_ids = self.generate_config_names(config_count)
 
         content_path = os.path.join(CWD, "test_config_modules_content.json")
         content_path_malformed = os.path.join(
@@ -1690,13 +1722,14 @@ class TestIoTEdgeDeployments(IoTLiveScenarioTest):
                 config_ids[1], LIVE_HUB, LIVE_RG
             )
         )
-        del config_ids[1]
+        del self.config_ids[1]
+
         self.cmd(
             "iot edge deployment delete -d {} --login {}".format(
                 config_ids[0], LIVE_HUB_CS
             )
         )
-        del config_ids[0]
+        del self.config_ids[0]
 
         # Error top of -1 does not work with configurations
         self.cmd(
@@ -1712,6 +1745,11 @@ class TestIoTEdgeDeployments(IoTLiveScenarioTest):
 
 
 class TestIoTStorage(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTStorage, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     @pytest.mark.skipif(
         not LIVE_STORAGE, reason="empty azext_iot_teststorageuri env var"
     )
@@ -1719,8 +1757,7 @@ class TestIoTStorage(IoTLiveScenarioTest):
         device_count = 1
 
         content_path = os.path.join(CWD, "test_config_modules_content_v1.json")
-        names = self._create_entity_names(devices=device_count)
-        device_ids = names["device_ids"]
+        device_ids = self.generate_device_names(device_count)
 
         self.cmd(
             "iot hub device-identity create -d {} -n {} -g {} --ee".format(
@@ -1758,23 +1795,25 @@ class TestIoTStorage(IoTLiveScenarioTest):
 
 
 class TestIoTEdgeOffline(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTEdgeOffline, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
+
     def test_edge_offline(self):
         device_count = 3
         edge_device_count = 2
 
-        names = self._create_entity_names(
-            devices=device_count, edge_devices=edge_device_count
-        )
-        device_ids = names["device_ids"]
-        edge_device_ids = names["edge_device_ids"]
+        device_ids = self.generate_device_names(device_count)
+        edge_device_ids = self.generate_device_names(edge_device_count, True)
 
-        for i in range(edge_device_count):
+        for edge_device in edge_device_ids:
             self.cmd(
                 "iot hub device-identity create -d {} -n {} -g {} --ee".format(
-                    edge_device_ids[i], LIVE_HUB, LIVE_RG
+                    edge_device, LIVE_HUB, LIVE_RG
                 ),
                 checks=[
-                    self.check("deviceId", edge_device_ids[i]),
+                    self.check("deviceId", edge_device),
                     self.check("status", "enabled"),
                     self.check("statusReason", None),
                     self.check("connectionState", "Disconnected"),
@@ -1785,13 +1824,13 @@ class TestIoTEdgeOffline(IoTLiveScenarioTest):
                 ],
             )
 
-        for i in range(device_count):
+        for device in device_ids:
             self.cmd(
                 "iot hub device-identity create -d {} -n {} -g {}".format(
-                    device_ids[i], LIVE_HUB, LIVE_RG
+                    device, LIVE_HUB, LIVE_RG
                 ),
                 checks=[
-                    self.check("deviceId", device_ids[i]),
+                    self.check("deviceId", device),
                     self.check("status", "enabled"),
                     self.check("statusReason", None),
                     self.check("connectionState", "Disconnected"),
@@ -1908,6 +1947,8 @@ class TestIoTEdgeOffline(IoTLiveScenarioTest):
             ),
             expect_failure=False,
         )
+
+        # TODO: Result should be JSON
         expected_output = "{}".format(device_ids[1])
         assert output.get_output_in_json() == expected_output
 

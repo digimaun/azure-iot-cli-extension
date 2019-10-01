@@ -8,7 +8,7 @@ import os
 import pytest
 
 from uuid import uuid4
-from . import IoTLiveTest, TEST_DEVICE_PREFIX
+from . import IoTLiveScenarioTest, PREFIX_DEVICE
 
 # Temporary workaround.
 from azext_iot.common.utility import (
@@ -21,7 +21,6 @@ from azext_iot.common.utility import (
 LIVE_HUB = os.environ.get("azext_iot_testhub")
 LIVE_RG = os.environ.get("azext_iot_testrg")
 LIVE_HUB_CS = os.environ.get("azext_iot_testhub_cs")
-LIVE_HUB_MIXED_CASE_CS = LIVE_HUB_CS.replace("HostName", "hostname", 1)
 
 LIVE_CONSUMER_GROUPS = ["test1", "test2", "test3"]
 
@@ -33,9 +32,11 @@ if not all([LIVE_HUB, LIVE_HUB_CS, LIVE_RG]):
 
 
 # IoT Hub Messaging tests currently are run live due to non HTTP based interaction i.e. amqp, mqtt.
-class TestIoTHubMessaging(IoTLiveTest):
-    def __init__(self):
-        super(TestIoTHubMessaging, self).__init__("abcd")
+class TestIoTHubMessaging(IoTLiveScenarioTest):
+    def __init__(self, test_case):
+        super(TestIoTHubMessaging, self).__init__(
+            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
+        )
 
     @pytest.mark.skipif(
         not validate_min_python_version(3, 4, exit_on_fail=False),
@@ -43,9 +44,7 @@ class TestIoTHubMessaging(IoTLiveTest):
     )
     def test_uamqp_device_messaging(self):
         device_count = 1
-
-        names = self._create_entity_names(devices=device_count)
-        device_ids = names["device_ids"]
+        device_ids = self.generate_device_names(device_count)
 
         self.cmd(
             "iot hub device-identity create -d {} -n {} -g {} --ee".format(
@@ -154,9 +153,7 @@ class TestIoTHubMessaging(IoTLiveTest):
 
     def test_device_messaging(self):
         device_count = 1
-
-        names = self._create_entity_names(devices=device_count)
-        device_ids = names["device_ids"]
+        device_ids = self.generate_device_names(device_count)
 
         self.cmd(
             "iot hub device-identity create -d {} -n {} -g {} --ee".format(
@@ -305,7 +302,9 @@ class TestIoTHubMessaging(IoTLiveTest):
 
         cli_ctx = DummyCli()
         client = iot_hub_service_factory(cli_ctx)
+
         device_count = 10
+        device_ids = self.generate_device_names(device_count)
 
         # Test with invalid connection string
         self.cmd(
@@ -314,8 +313,6 @@ class TestIoTHubMessaging(IoTLiveTest):
         )
 
         # Create and Simulate Devices
-        device_ids = self._create_entity_names(devices=device_count)["device_ids"]
-
         for i in range(device_count):
             self.cmd(
                 "iot hub device-identity create -d {} -n {} -g {}".format(
@@ -375,7 +372,7 @@ class TestIoTHubMessaging(IoTLiveTest):
         # Monitor events with device-id wildcards
         self.command_execute_assert(
             "iot hub monitor-events -n {} -g {} -d {} --et {} -t 10 -y -p sys anno app".format(
-                LIVE_HUB, LIVE_RG, TEST_DEVICE_PREFIX + "*", enqueued_time
+                LIVE_HUB, LIVE_RG, PREFIX_DEVICE + "*", enqueued_time
             ),
             device_ids,
         )
@@ -519,9 +516,7 @@ class TestIoTHubMessaging(IoTLiveTest):
     )
     def test_hub_monitor_feedback(self):
         device_count = 1
-
-        names = self._create_entity_names(devices=device_count)
-        device_ids = names["device_ids"]
+        device_ids = self.generate_device_names(device_count)
 
         for i in range(device_count):
             self.cmd(
