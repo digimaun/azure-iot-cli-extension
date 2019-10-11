@@ -10,7 +10,7 @@ import json
 import pytest
 
 from azure.cli.core.util import read_file_content
-from . import IoTLiveScenarioTest
+from . import IoTScenarioTest
 from azext_iot.constants import DEVICE_DEVICESCOPE_PREFIX
 
 
@@ -36,7 +36,7 @@ PRIMARY_THUMBPRINT = "A361EA6A7119A8B0B7BBFFA2EAFDAD1F9D5BED8C"
 SECONDARY_THUMBPRINT = "14963E8F3BA5B3984110B3C1CA8E8B8988599087"
 
 
-class TestIoTHub(IoTLiveScenarioTest):
+class TestIoTHub(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTHub, self).__init__(test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS)
 
@@ -106,7 +106,7 @@ class TestIoTHub(IoTLiveScenarioTest):
         )
 
 
-class TestIoTHubDevices(IoTLiveScenarioTest):
+class TestIoTHubDevices(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTHubDevices, self).__init__(
             test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
@@ -486,7 +486,7 @@ class TestIoTHubDevices(IoTLiveScenarioTest):
         )
 
 
-class TestIoTHubDeviceTwins(IoTLiveScenarioTest):
+class TestIoTHubDeviceTwins(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTHubDeviceTwins, self).__init__(
             test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
@@ -627,7 +627,7 @@ class TestIoTHubDeviceTwins(IoTLiveScenarioTest):
         assert not result["isSynced"]
 
 
-class TestIoTHubModules(IoTLiveScenarioTest):
+class TestIoTHubModules(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTHubModules, self).__init__(
             test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
@@ -916,7 +916,7 @@ class TestIoTHubModules(IoTLiveScenarioTest):
                 )
 
 
-class TestIoTHubModuleTwins(IoTLiveScenarioTest):
+class TestIoTHubModuleTwins(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTHubModuleTwins, self).__init__(
             test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
@@ -1089,7 +1089,7 @@ class TestIoTHubModuleTwins(IoTLiveScenarioTest):
             )
 
 
-class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
+class TestIoTHubDeviceConfigs(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTHubDeviceConfigs, self).__init__(
             test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
@@ -1415,7 +1415,7 @@ class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
         )
 
 
-class TestIoTEdge(IoTLiveScenarioTest):
+class TestIoTEdge(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTEdge, self).__init__(test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS)
 
@@ -1470,7 +1470,7 @@ class TestIoTEdge(IoTLiveScenarioTest):
         )
 
 
-class TestIoTEdgeDeployments(IoTLiveScenarioTest):
+class TestIoTEdgeDeployments(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTEdgeDeployments, self).__init__(
             test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
@@ -1751,7 +1751,7 @@ class TestIoTEdgeDeployments(IoTLiveScenarioTest):
         )
 
 
-class TestIoTStorage(IoTLiveScenarioTest):
+class TestIoTStorage(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTStorage, self).__init__(test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS)
 
@@ -1799,7 +1799,7 @@ class TestIoTStorage(IoTLiveScenarioTest):
         )
 
 
-class TestIoTEdgeOffline(IoTLiveScenarioTest):
+class TestIoTEdgeOffline(IoTScenarioTest):
     def __init__(self, test_case):
         super(TestIoTEdgeOffline, self).__init__(
             test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS

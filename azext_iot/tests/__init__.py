@@ -8,14 +8,22 @@ import sys
 import io
 import os
 
-from azure.cli.testsdk import LiveScenarioTest
+from azure.cli.testsdk import ScenarioTest
+from azure.cli.testsdk.reverse_dependency import get_dummy_cli
+from azure.cli.core.commands.client_factory import get_subscription_id
+from azure_devtools.scenario_tests import RecordingProcessor
+from azure_devtools.scenario_tests.utilities import is_text_payload
 from contextlib import contextmanager
+
 
 PREFIX_DEVICE = "test-device-"
 PREFIX_EDGE_DEVICE = "test-edge-device-"
 PREFIX_DEVICE_MODULE = "test-module-"
 PREFIX_CONFIG = "test-config-"
 PREFIX_EDGE_CONFIG = "test-edgedeploy-"
+
+# Replaced mock values
+MOCKED_SUBSCRIPTION_ID = '00000000-0000-0000-0000-000000000000'
 
 
 @contextmanager
@@ -49,7 +57,28 @@ def capture_output():
         buffer_tee.close()
 
 
-class IoTLiveScenarioTest(LiveScenarioTest):
+class IoTTokenReplacer(RecordingProcessor):
+    """Replace sensitive tokens from response body.
+
+       This is filtering what the default set of recording processors
+       from azure-python-devtools miss. It may make sense to merge at some point.
+    """
+
+    def __init__(self, token, replacement='fake_token'):
+        self._replacement = replacement
+        self._token = token
+
+    def process_response(self, response):
+        if is_text_payload(response) and response['body']['string']:
+            response['body']['string'] = self._replace_subscription_id(response['body']['string'])
+
+        return response
+
+    def _replace_subscription_id(self, val):
+        return val.replace(self._token, self._replacement)
+
+
+class IoTScenarioTest(ScenarioTest):
     def __init__(self, test_scenario, entity_name, entity_rg, entity_cs):
         assert test_scenario
         assert entity_name
@@ -63,7 +92,11 @@ class IoTLiveScenarioTest(LiveScenarioTest):
         self.config_ids = []
 
         os.environ["AZURE_CORE_COLLECT_TELEMETRY"] = "no"
-        super(IoTLiveScenarioTest, self).__init__(test_scenario)
+        sub_id = get_subscription_id(get_dummy_cli())
+
+        super(IoTScenarioTest, self).__init__(
+            test_scenario, recording_processors=[IoTTokenReplacer(sub_id, MOCKED_SUBSCRIPTION_ID)]
+        )
 
     def generate_device_names(self, count=1, edge=False):
         names = [
