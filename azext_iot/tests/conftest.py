@@ -73,9 +73,7 @@ def serviceclient_generic_invalid_or_missing_etag(
 @pytest.fixture()
 def mqttclient(mocker, fixture_ghcs, fixture_sas):
     client = mocker.patch(path_mqtt_client)
-    mock_conn = mocker.patch(
-        "azext_iot.operations._mqtt.mqtt_client_wrap.is_connected"
-    )
+    mock_conn = mocker.patch("azext_iot.operations._mqtt.mqtt_client_wrap.is_connected")
     mock_conn.return_value = True
     return client
 

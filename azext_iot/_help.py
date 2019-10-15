@@ -658,8 +658,9 @@ helps['iot edge deployment list'] = """
 
 helps['iot edge deployment update'] = """
     type: command
-    short-summary: Update specified properties of an IoT Edge deployment.
-    long-summary: |
+    short-summary: |
+                  Update specified properties of an IoT Edge deployment.
+
                   Use --set followed by property assignments for updating a deployment.
 
                   Note: IoT Edge deployment content is immutable. Deployment properties that can be

@@ -8,7 +8,7 @@ import os
 import pytest
 
 from uuid import uuid4
-from . import IoTLiveScenarioTest, PREFIX_DEVICE
+from . import IoTScenarioTest, PREFIX_DEVICE
 
 # Temporary workaround.
 from azext_iot.common.utility import (
@@ -32,11 +32,9 @@ if not all([LIVE_HUB, LIVE_HUB_CS, LIVE_RG]):
 
 
 # IoT Hub Messaging tests currently are run live due to non HTTP based interaction i.e. amqp, mqtt.
-class TestIoTHubMessaging(IoTLiveScenarioTest):
+class TestIoTHubMessaging(IoTScenarioTest):
     def __init__(self, test_case):
-        super(TestIoTHubMessaging, self).__init__(
-            test_case, LIVE_HUB, LIVE_RG, LIVE_HUB_CS
-        )
+        super(TestIoTHubMessaging, self).__init__(test_case)
 
     @pytest.mark.skipif(
         not validate_min_python_version(3, 4, exit_on_fail=False),
