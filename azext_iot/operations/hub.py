@@ -24,7 +24,8 @@ from azext_iot.common._azure import get_iot_hub_connection_string
 from azext_iot.common.utility import (shell_safe_json_parse,
                                       validate_key_value_pairs, url_encode_dict,
                                       evaluate_literal, unpack_msrest_error,
-                                      init_monitoring)
+                                      init_monitoring,
+                                      process_json_arg)
 from azext_iot._factory import _bind_sdk
 from azext_iot.operations.generic import _execute_query, _process_top
 
@@ -500,16 +501,12 @@ def iot_edge_set_modules(cmd, device_id, content,
     service_sdk, errors = _bind_sdk(target, SdkType.service_sdk)
 
     try:
-        if exists(content):
-            content = str(read_file_content(content))
-        content = shell_safe_json_parse(content)
+        content = process_json_arg(content, argument_name='content')
         modules_content = _process_config_content(content)
 
         content = ConfigurationContent(modules_content=modules_content)
         service_sdk.apply_configuration_on_device(device_id, content)
         return iot_device_module_list(cmd, device_id, hub_name=hub_name, login=login)
-    except ValueError as j:
-        raise CLIError('improperly formatted json: {}'.format(j))
     except errors.CloudError as e:
         raise CLIError(unpack_msrest_error(e))
 
