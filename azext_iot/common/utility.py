@@ -397,4 +397,22 @@ def dict_clean(d):
 
 def looks_like_file(element):
     element = element.lower()
-    return element.endswith(('.txt', '.json', '.md', '.rst', '.doc', '.docx'))
+    return element.endswith(
+        (
+            ".txt",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".md",
+            ".rst",
+            ".doc",
+            ".docx",
+            ".html",
+            ".htm",
+            ".py",
+            ".java",
+            ".ts",
+            ".js",
+            ".cs"
+        )
+    )

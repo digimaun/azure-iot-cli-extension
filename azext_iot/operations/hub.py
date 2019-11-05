@@ -509,10 +509,10 @@ def iot_edge_set_modules(cmd, device_id, content,
 
 
 def iot_edge_deployment_create(cmd, config_id, content, hub_name=None, target_condition="", priority=0,
-                               labels=None, resource_group_name=None, login=None):
+                               labels=None, metrics=None, resource_group_name=None, login=None):
     return _iot_hub_configuration_create(cmd=cmd, config_id=config_id, content=content, hub_name=hub_name,
                                          target_condition=target_condition, priority=priority,
-                                         labels=labels, resource_group_name=resource_group_name,
+                                         labels=labels, metrics=metrics, resource_group_name=resource_group_name,
                                          login=login, edge=True)
 
 
@@ -855,7 +855,6 @@ def iot_device_method(cmd, device_id, method_name, hub_name=None, method_payload
             method_payload = process_json_arg(method_payload, argument_name="method-payload")
 
         method = CloudToDeviceMethod(method_name, timeout, timeout, method_payload)
-
         return service_sdk.invoke_device_method(device_id, method)
     except errors.CloudError as e:
         raise CLIError(unpack_msrest_error(e))
@@ -880,8 +879,7 @@ def iot_device_module_method(cmd, device_id, module_id, method_name, hub_name=No
         if method_payload:
             method_payload = process_json_arg(method_payload, argument_name="method-payload")
 
-        method = CloudToDeviceMethod(method_name, timeout, timeout)
-        method.payload = method_payload
+        method = CloudToDeviceMethod(method_name, timeout, timeout, method_payload)
         return service_sdk.invoke_device_method1(device_id, module_id, method)
     except errors.CloudError as e:
         raise CLIError(unpack_msrest_error(e))

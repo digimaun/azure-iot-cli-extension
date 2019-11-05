@@ -16,12 +16,12 @@ from azext_iot.common.utility import (
     validate_min_python_version,
     url_encode_dict,
     validate_key_value_pairs,
+    read_file_content
 )
 from azext_iot.common.sas_token_auth import SasTokenAuthentication
 from azext_iot.constants import TRACING_PROPERTY
 from azext_iot.tests.generators import create_req_monitor_events
 from knack.util import CLIError
-from azure.cli.core.util import read_file_content
 from .conftest import (
     fixture_cmd,
     build_mock_response,

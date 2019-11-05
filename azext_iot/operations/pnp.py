@@ -16,8 +16,8 @@ from azext_iot.constants import PNP_API_VERSION, PNP_ENDPOINT
 from azext_iot.common.utility import (unpack_pnp_http_error,
                                       get_sas_token,
                                       shell_safe_json_parse,
+                                      read_file_content,
                                       looks_like_file)
-from azure.cli.core.util import read_file_content
 
 logger = get_logger(__name__)
 
