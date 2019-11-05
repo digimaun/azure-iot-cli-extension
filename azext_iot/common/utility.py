@@ -399,6 +399,8 @@ def looks_like_file(element):
     element = element.lower()
     return element.endswith(
         (
+            ".log",
+            ".rtf",
             ".txt",
             ".json",
             ".yaml",
