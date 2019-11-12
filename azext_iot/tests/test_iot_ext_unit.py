@@ -913,7 +913,7 @@ def generate_device_config(
 
     if include_metrics and content_type != "modules":
         if metrics_from_file:
-            result["metrics"] = "test_config_device_metrics.json"
+            result["metrics"] = "test_config_generic_metrics.json"
         else:
             result["metrics"] = {
                 "metrics": {
@@ -935,7 +935,7 @@ def generate_device_config(
     elif content_type == "malformed_modules":
         content_path = "test_config_modules_content_malformed.json"
     else:
-        content_path = "test_config_device_content.json"
+        content_path = "test_adm_device_content.json"
 
     if content_from_file:
         result["content"] = content_path

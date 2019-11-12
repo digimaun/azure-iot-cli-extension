@@ -5,13 +5,6 @@
             "$edgeAgent": {
                 "properties.desired": {
                     "schemaVersion": "1.0",
-                    "runtime": {
-                        "type": "docker",
-                        "settings": {
-                            "minDockerVersion": "v1.23",
-                            "loggingOptions": ""
-                        }
-                    },
                     "systemModules": {
                         "edgeAgent": {
                             "type": "docker",
@@ -61,7 +54,6 @@
         }
     },
     "metrics": {
-        "queries": {
-        }
+        "queries": {}
     }
 }

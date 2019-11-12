@@ -1102,8 +1102,8 @@ class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
         config_count = 5
         config_ids = self.generate_config_names(config_count)
 
-        content_path = os.path.join(CWD, "test_config_device_content.json")
-        metrics_path = os.path.join(CWD, "test_config_device_metrics.json")
+        content_path = os.path.join(CWD, "test_adm_device_content.json")
+        metrics_path = os.path.join(CWD, "test_config_generic_metrics.json")
 
         self.kwargs["configuration_payload"] = read_file_content(content_path)
         self.kwargs["metrics_payload"] = read_file_content(metrics_path)
@@ -1112,10 +1112,10 @@ class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
         condition = "tags.building=9 and tags.environment='test'"
         empty_metrics = {"queries": {}, "results": {}}
 
-        # With connection string
+        # With connection string. Configuration Id must be lowercase and will be lower()'ed.
         self.cmd(
             "iot hub configuration create -c {} --login {} --pri {} --tc \"{}\" --lab {} -k '{}'".format(
-                config_ids[0],
+                config_ids[0].upper(),
                 LIVE_HUB_CS,
                 priority,
                 condition,
@@ -1348,13 +1348,25 @@ class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
         ).get_output_in_json()
 
         self.cmd(
-            "iot hub configuration show-metric --metric-id {} --login {} --config-id {} --metric-type {}".format(
-                user_metric_name, LIVE_HUB_CS, config_ids[2], "user"
+            "iot hub configuration show-metric --metric-id {} --login {} --config-id {}".format(
+                user_metric_name, LIVE_HUB_CS, config_ids[2]
             ),
             checks=[
                 self.check("metric", user_metric_name),
                 self.check(
                     "query", config_output["metrics"]["queries"][user_metric_name]
+                ),
+            ],
+        )
+
+        self.cmd(
+            "iot hub configuration show-metric --metric-id {} --login {} --config-id {} --metric-type {}".format(
+                system_metric_name, LIVE_HUB_CS, config_ids[2], "system"
+            ),
+            checks=[
+                self.check("metric", system_metric_name),
+                self.check(
+                    "query", config_output["systemMetrics"]["queries"][system_metric_name]
                 ),
             ],
         )
@@ -1365,6 +1377,19 @@ class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
                 "doesnotexist", LIVE_HUB_CS, config_ids[2], "user"
             ),
             expect_failure=True,
+        )
+
+        self.cmd(
+            "iot hub configuration show-metric -m {} --login {} -c {} --metric-type {}".format(
+                user_metric_name, LIVE_HUB_CS, config_ids[2], "user"
+            ),
+            checks=[
+                self.check("metric", user_metric_name),
+                self.check(
+                    "query",
+                    config_output["metrics"]["queries"][user_metric_name],
+                ),
+            ],
         )
 
         self.cmd(
@@ -1406,9 +1431,9 @@ class TestIoTHubDeviceConfigs(IoTLiveScenarioTest):
             expect_failure=True,
         )
 
-        # Error max top of 20 with configurations
+        # Error max top of 100 with configurations
         self.cmd(
-            "iot hub configuration list -n {} -g {} --top 100".format(
+            "iot hub configuration list -n {} -g {} --top 200".format(
                 LIVE_HUB, LIVE_RG
             ),
             expect_failure=True,
@@ -1509,10 +1534,10 @@ class TestIoTEdgeDeployments(IoTLiveScenarioTest):
         priority = random.randint(1, 10)
         condition = "tags.building=9 and tags.environment='test'"
 
-        # With connection string and file path
+        # With connection string and file path. Configurations must be lowercase and will be lower()'ed.
         self.cmd(
             "iot edge deployment create -d {} --login {} --pri {} --tc \"{}\" --lab {} -k '{}' --metrics '{}'".format(
-                config_ids[0],
+                config_ids[0].upper(),
                 LIVE_HUB_CS,
                 priority,
                 condition,
@@ -1673,22 +1698,36 @@ class TestIoTEdgeDeployments(IoTLiveScenarioTest):
         )
 
         # Metrics
+        user_metric_name = "mymetrik"
         system_metric_name = "appliedCount"
         config_output = self.cmd(
             "iot edge deployment show --login {} --deployment-id {}".format(
-                LIVE_HUB_CS, config_ids[2]
+                LIVE_HUB_CS, config_ids[0]
             )
         ).get_output_in_json()
 
+        # Default metric type is user
         self.cmd(
             "iot edge deployment show-metric --metric-id {} --deployment-id {} --hub-name {}".format(
-                system_metric_name, config_ids[2], LIVE_HUB
+                user_metric_name, config_ids[0], LIVE_HUB
+            ),
+            checks=[
+                self.check("metric", user_metric_name),
+                self.check(
+                    "query",
+                    config_output["metrics"]["queries"][user_metric_name],
+                ),
+            ],
+        )
+
+        self.cmd(
+            "iot edge deployment show-metric --metric-id {} --hub-name {} --deployment-id {} --metric-type {}".format(
+                system_metric_name, LIVE_HUB, config_ids[0], "system"
             ),
             checks=[
                 self.check("metric", system_metric_name),
                 self.check(
-                    "query",
-                    config_output["systemMetrics"]["queries"][system_metric_name],
+                    "query", config_output["systemMetrics"]["queries"][system_metric_name]
                 ),
             ],
         )
@@ -1696,14 +1735,14 @@ class TestIoTEdgeDeployments(IoTLiveScenarioTest):
         # With connection string
         self.cmd(
             "iot edge deployment show-metric -m {} --login {} -d {}".format(
-                "doesnotexist", LIVE_HUB_CS, config_ids[2]
+                "doesnotexist", LIVE_HUB_CS, config_ids[0]
             ),
             expect_failure=True,
         )
 
         self.cmd(
-            "iot edge deployment show-metric --metric-id {} --login {} --deployment-id {}".format(
-                system_metric_name, LIVE_HUB_CS, config_ids[2]
+            "iot edge deployment show-metric --metric-id {} --login {} --deployment-id {} --mt {}".format(
+                system_metric_name, LIVE_HUB_CS, config_ids[0], "system"
             ),
             checks=[
                 self.check("metric", system_metric_name),
@@ -1753,9 +1792,9 @@ class TestIoTEdgeDeployments(IoTLiveScenarioTest):
             expect_failure=True,
         )
 
-        # Error max top of 20 with configurations
+        # Error max top of 100 with configurations
         self.cmd(
-            "iot edge deployment list -n {} -g {} --top 100".format(LIVE_HUB, LIVE_RG),
+            "iot edge deployment list -n {} -g {} --top 200".format(LIVE_HUB, LIVE_RG),
             expect_failure=True,
         )
 
