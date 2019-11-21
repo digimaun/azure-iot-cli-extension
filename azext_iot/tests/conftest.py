@@ -141,3 +141,11 @@ def build_mock_response(mocker, status_code=200, payload=None, headers=None, raw
     if headers:
         response.headers = headers
     return response
+
+
+def get_context_path(base_path, *paths):
+    base_path = os.path.dirname(os.path.abspath(base_path))
+    if paths:
+        return os.path.join(base_path, *paths)
+
+    return base_path

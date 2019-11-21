@@ -1,6 +1,6 @@
 {
     "content": {
-        "$schema": "https://raw.githubusercontent.com/SLdragon/schemastore/master/src/schemas/json/azure-iot-edge-deployment-1.0.json",
+        "$schema": "http://json.schemastore.org/azure-iot-edge-deployment-2.0",
         "modulesContent": {
             "$edgeAgent": {
                 "properties.desired": {
