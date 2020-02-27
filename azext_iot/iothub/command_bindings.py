@@ -23,3 +23,6 @@ def load_iothub_commands(self, _):
 
     with self.command_group("iot hub device-identity", command_type=iothub_ops_device) as cmd_group:
         pass
+
+    with self.command_group("iot hub devicestream", command_type=iothub_ops_device) as cmd_group:
+        cmd_group.command("init", "get_device_stream")

@@ -453,3 +453,59 @@ class TwinOperations(object):
 
         return deserialized
     update_module_twin.metadata = {'url': '/twins/{id}/modules/{mid}'}
+
+    # @digimaun - added custom
+    def get_device_stream(
+            self, id, stream_name, custom_headers=None, raw=False, **operation_config):
+        """Gets a device twin.
+
+        Gets a device twin. See
+        https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-device-twins
+        for more information.
+
+        :param id: Device ID.
+        :type id: str
+        :param dict custom_headers: headers that will be added to the request
+        :param bool raw: returns the direct response alongside the
+        deserialized response
+        :param operation_config: :ref:`Operation configuration
+        overrides<msrest:optionsforoperations>`.
+        :return: Twin or ClientRawResponse if raw=true
+        :rtype: ~service.models.Twin or ~msrest.pipeline.ClientRawResponse
+        :raises: :class:`CloudError<msrestazure.azure_exceptions.CloudError>`
+        """
+        # Construct URL
+        url = self.get_device_stream.metadata['url']
+        path_format_arguments = {
+            'id': self._serialize.url("id", id, 'str'),
+            'streamName': self._serialize.url("streamName", stream_name, 'str')
+        }
+        url = self._client.format_url(url, **path_format_arguments)
+
+        # Construct parameters
+        query_parameters = {}
+        query_parameters['api-version'] = self._serialize.query("self.api_version", '2018-08-30-preview', 'str')
+
+        # Construct headers
+        header_parameters = {}
+        header_parameters['Accept'] = 'application/json'
+        if self.config.generate_client_request_id:
+            header_parameters['x-ms-client-request-id'] = str(uuid.uuid1())
+        if custom_headers:
+            header_parameters.update(custom_headers)
+        if self.config.accept_language is not None:
+            header_parameters['accept-language'] = self._serialize.header("self.config.accept_language", self.config.accept_language, 'str')
+
+        # Construct and send request
+        request = self._client.post(url, query_parameters, header_parameters, None)
+        response = self._client.send(request, stream=False, **operation_config)
+
+        if response.status_code not in [200, 202]:
+            exp = CloudError(response)
+            exp.request_id = response.headers.get('x-ms-request-id')
+            raise exp
+
+        client_raw_response = ClientRawResponse(None, response)
+        return client_raw_response
+
+    get_device_stream.metadata = {'url': '/twins/{id}/streams/{streamName}'}
