@@ -11,10 +11,25 @@ from knack.log import get_logger
 logger = get_logger(__name__)
 
 
-def create_instance(cmd, name, resource_group_name, location=None, tags=None):
+def create_instance(
+    cmd,
+    name,
+    resource_group_name,
+    location=None,
+    tags=None,
+    assign_identity=None,
+    scopes=None,
+    role_type="Contributor",
+):
     rp = ResourceProvider(cmd)
     return rp.create(
-        name=name, resource_group_name=resource_group_name, location=location, tags=tags
+        name=name,
+        resource_group_name=resource_group_name,
+        location=location,
+        tags=tags,
+        assign_identity=assign_identity,
+        scopes=scopes,
+        role_type=role_type
     )
 
 

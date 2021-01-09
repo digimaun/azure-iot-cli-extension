@@ -11,12 +11,16 @@ from azext_iot.digitaltwins.providers import (
 )
 from azext_iot.digitaltwins.providers.rbac import RbacProvider
 from azext_iot.sdk.digitaltwins.controlplane.models import (
+    DigitalTwinsDescription,
     EventGrid as EventGridEndpointProperties,
     EventHub as EventHubEndpointProperties,
     ServiceBus as ServiceBusEndpointProperties,
 )
 from azext_iot.common.utility import unpack_msrest_error
 from knack.util import CLIError
+from knack.log import get_logger
+
+logger = get_logger(__name__)
 
 
 class ResourceProvider(DigitalTwinsResourceManager):
@@ -25,8 +29,17 @@ class ResourceProvider(DigitalTwinsResourceManager):
         self.mgmt_sdk = self.get_mgmt_sdk()
         self.rbac = RbacProvider()
 
-    def create(self, name, resource_group_name, location=None, tags=None, timeout=60):
-
+    def create(
+        self,
+        name,
+        resource_group_name,
+        location=None,
+        tags=None,
+        timeout=60,
+        assign_identity=None,
+        scopes=None,
+        role_type="Contributor",
+    ):
         if not location:
             from azext_iot.common.embedded_cli import EmbeddedCLI
 
@@ -38,13 +51,49 @@ class ResourceProvider(DigitalTwinsResourceManager):
             location = resource_group_meta["location"]
 
         try:
-            return self.mgmt_sdk.digital_twins.create_or_update(
-                resource_name=name,
-                resource_group_name=resource_group_name,
+            if assign_identity:
+                if any([scopes, role_type]) and not all([scopes, role_type]):
+                    raise CLIError(
+                        "Both --scopes and --role values are required when assigning the instance identity."
+                    )
+
+            digital_twins_create = DigitalTwinsDescription(
                 location=location,
                 tags=tags,
+                identity={"type": "SystemAssigned" if assign_identity else "None"},
+            )
+            create_or_update = self.mgmt_sdk.digital_twins.create_or_update(
+                resource_name=name,
+                resource_group_name=resource_group_name,
+                digital_twins_create=digital_twins_create,
                 long_running_operation_timeout=timeout,
             )
+
+            def rbac_handler(lro):
+                instance = lro.resource().as_dict()
+                identity = instance.get("identity")
+                if identity:
+                    identity_type = identity.get("type")
+                    principal_id = identity.get("principal_id")
+
+                    if (
+                        principal_id
+                        and scopes
+                        and identity_type
+                        and identity_type.lower() == "systemassigned"
+                    ):
+                        for scope in scopes:
+                            logger.info(
+                                "Applying rbac assignment: Principal Id: {}, Scope: {}, Role: {}".format(
+                                    principal_id, scope, role_type
+                                )
+                            )
+                            self.rbac.assign_role_flex(
+                                principal_id=principal_id, scope=scope, role_type=role_type
+                            )
+
+            create_or_update.add_done_callback(rbac_handler)
+            return create_or_update
         except CloudError as e:
             raise e
         except ErrorResponseException as err:

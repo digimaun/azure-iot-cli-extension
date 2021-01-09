@@ -14,7 +14,7 @@ from enum import Enum
 
 class ADTEndpointType(Enum):
     """
-    ADT Location Type.
+    ADT Endpoint Type.
     """
 
     eventgridtopic = "eventgridtopic"

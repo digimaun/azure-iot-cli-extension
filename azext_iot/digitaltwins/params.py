@@ -8,7 +8,7 @@
 CLI parameter definitions.
 """
 
-from knack.arguments import CLIArgumentType
+from knack.arguments import CLIArgumentType, CaseInsensitiveList
 from azure.cli.core.commands.parameters import (
     resource_group_name_type,
     get_three_state_flag,
@@ -100,6 +100,27 @@ def load_digitaltwins_arguments(self, _):
             type=int,
             options_list=["--top"],
             help="Maximum number of elements to return.",
+        )
+
+    with self.argument_context("dt create") as context:
+        context.argument(
+            "assign_identity",
+            arg_group="Managed Service Identity",
+            help="Assign a system generated identity to the Digital Twins instance.",
+            arg_type=get_three_state_flag(),
+        )
+        context.argument(
+            "scopes",
+            arg_group="Managed Service Identity",
+            nargs="+",
+            options_list=["--scopes"],
+            help="Space-seperated scopes the system assigned identity can access.",
+        )
+        context.argument(
+            "role_type",
+            arg_group="Managed Service Identity",
+            options_list=["--role"],
+            help="Role name or Id the system assigned identity will have.",
         )
 
     with self.argument_context("dt endpoint create") as context:
