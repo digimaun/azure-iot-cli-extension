@@ -5,7 +5,7 @@
 # --------------------------------------------------------------------------------------------
 
 from azext_iot.digitaltwins.providers.resource import ResourceProvider
-from azext_iot.digitaltwins.common import ADTEndpointType
+from azext_iot.digitaltwins.common import ADTEndpointType, ADTEndpointAuthType
 from knack.log import get_logger
 
 logger = get_logger(__name__)
@@ -79,7 +79,7 @@ def add_endpoint_eventgrid(
     resource_group_name=None,
     endpoint_subscription=None,
     dead_letter_endpoint=None,
-    tags=None,
+    auth_type=ADTEndpointAuthType.keybased.value,
 ):
     return _add_endpoint_eventgrid(
         cmd=cmd,
@@ -90,7 +90,7 @@ def add_endpoint_eventgrid(
         resource_group_name=resource_group_name,
         endpoint_subscription=endpoint_subscription,
         dead_letter_endpoint=dead_letter_endpoint,
-        tags=tags,
+        auth_type=auth_type,
     )
 
 
@@ -103,7 +103,7 @@ def _add_endpoint_eventgrid(
     resource_group_name=None,
     endpoint_subscription=None,
     dead_letter_endpoint=None,
-    tags=None,
+    auth_type=ADTEndpointAuthType.keybased.value,
 ):
     rp = ResourceProvider(cmd)
     return rp.add_endpoint(
@@ -115,7 +115,7 @@ def _add_endpoint_eventgrid(
         endpoint_resource_group=eventgrid_resource_group,
         endpoint_subscription=endpoint_subscription,
         dead_letter_endpoint=dead_letter_endpoint,
-        tags=tags,
+        auth_type=auth_type,
     )
 
 
@@ -130,7 +130,7 @@ def add_endpoint_servicebus(
     resource_group_name=None,
     endpoint_subscription=None,
     dead_letter_endpoint=None,
-    tags=None,
+    auth_type=ADTEndpointAuthType.keybased.value,
 ):
     return _add_endpoint_servicebus(
         cmd=cmd,
@@ -143,7 +143,7 @@ def add_endpoint_servicebus(
         resource_group_name=resource_group_name,
         endpoint_subscription=endpoint_subscription,
         dead_letter_endpoint=dead_letter_endpoint,
-        tags=tags,
+        auth_type=auth_type,
     )
 
 
@@ -158,7 +158,7 @@ def _add_endpoint_servicebus(
     resource_group_name=None,
     endpoint_subscription=None,
     dead_letter_endpoint=None,
-    tags=None,
+    auth_type=ADTEndpointAuthType.keybased.value,
 ):
     rp = ResourceProvider(cmd)
     return rp.add_endpoint(
@@ -172,7 +172,7 @@ def _add_endpoint_servicebus(
         endpoint_resource_policy=servicebus_policy,
         endpoint_subscription=endpoint_subscription,
         dead_letter_endpoint=dead_letter_endpoint,
-        tags=tags,
+        auth_type=auth_type,
     )
 
 
@@ -187,7 +187,7 @@ def add_endpoint_eventhub(
     resource_group_name=None,
     endpoint_subscription=None,
     dead_letter_endpoint=None,
-    tags=None,
+    auth_type=ADTEndpointAuthType.keybased.value,
 ):
     return _add_endpoint_eventhub(
         cmd=cmd,
@@ -200,7 +200,7 @@ def add_endpoint_eventhub(
         resource_group_name=resource_group_name,
         endpoint_subscription=endpoint_subscription,
         dead_letter_endpoint=dead_letter_endpoint,
-        tags=tags,
+        auth_type=auth_type,
     )
 
 
@@ -215,7 +215,7 @@ def _add_endpoint_eventhub(
     resource_group_name=None,
     endpoint_subscription=None,
     dead_letter_endpoint=None,
-    tags=None,
+    auth_type=ADTEndpointAuthType.keybased.value,
 ):
     rp = ResourceProvider(cmd)
     return rp.add_endpoint(
@@ -229,5 +229,5 @@ def _add_endpoint_eventhub(
         endpoint_resource_policy=eventhub_policy,
         endpoint_subscription=endpoint_subscription,
         dead_letter_endpoint=dead_letter_endpoint,
-        tags=tags,
+        auth_type=auth_type,
     )

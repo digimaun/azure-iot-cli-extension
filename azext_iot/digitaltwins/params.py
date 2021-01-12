@@ -8,12 +8,14 @@
 CLI parameter definitions.
 """
 
-from knack.arguments import CLIArgumentType, CaseInsensitiveList
+from knack.arguments import CLIArgumentType
 from azure.cli.core.commands.parameters import (
     resource_group_name_type,
     get_three_state_flag,
-    tags_type
+    get_enum_type,
+    tags_type,
 )
+from azext_iot.digitaltwins.common import ADTEndpointAuthType
 
 depfor_type = CLIArgumentType(
     options_list=["--dependencies-for"],
@@ -129,6 +131,12 @@ def load_digitaltwins_arguments(self, _):
             options_list=["--deadletter-sas-uri", "--dsu"],
             help="Dead-letter storage container URL with SAS token",
             arg_group="Dead-letter Endpoint"
+        )
+        context.argument(
+            "auth_type",
+            options_list=["--auth-type"],
+            help="Endpoint authentication type.",
+            arg_type=get_enum_type(ADTEndpointAuthType)
         )
 
     with self.argument_context("dt endpoint create eventgrid") as context:

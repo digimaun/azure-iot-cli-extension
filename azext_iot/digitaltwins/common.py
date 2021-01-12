@@ -20,3 +20,12 @@ class ADTEndpointType(Enum):
     eventgridtopic = "eventgridtopic"
     servicebus = "servicebus"
     eventhub = "eventhub"
+
+
+class ADTEndpointAuthType(Enum):
+    """
+    ADT Endpoint Auth Type.
+    """
+
+    identitybased = "IdentityBased"
+    keybased = "KeyBased"

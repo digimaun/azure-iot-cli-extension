@@ -3,19 +3,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
-
+from azext_iot.digitaltwins.common import ADTEndpointAuthType
 from azext_iot.digitaltwins.providers import (
     DigitalTwinsResourceManager,
     CloudError,
     ErrorResponseException,
 )
 from azext_iot.digitaltwins.providers.rbac import RbacProvider
-from azext_iot.sdk.digitaltwins.controlplane.models import (
-    DigitalTwinsDescription,
-    EventGrid as EventGridEndpointProperties,
-    EventHub as EventHubEndpointProperties,
-    ServiceBus as ServiceBusEndpointProperties,
-)
+from azext_iot.sdk.digitaltwins.controlplane.models import DigitalTwinsDescription
 from azext_iot.common.utility import unpack_msrest_error
 from knack.util import CLIError
 from knack.log import get_logger
@@ -89,7 +84,9 @@ class ResourceProvider(DigitalTwinsResourceManager):
                                 )
                             )
                             self.rbac.assign_role_flex(
-                                principal_id=principal_id, scope=scope, role_type=role_type
+                                principal_id=principal_id,
+                                scope=scope,
+                                role_type=role_type,
                             )
 
             create_or_update.add_done_callback(rbac_handler)
@@ -277,18 +274,20 @@ class ResourceProvider(DigitalTwinsResourceManager):
         endpoint_resource_namespace=None,
         endpoint_subscription=None,
         dead_letter_endpoint=None,
-        tags=None,
         resource_group_name=None,
         timeout=20,
+        auth_type=None,
     ):
-        from azext_iot.common.embedded_cli import EmbeddedCLI
         from azext_iot.digitaltwins.common import ADTEndpointType
 
         requires_policy = [ADTEndpointType.eventhub, ADTEndpointType.servicebus]
-        if endpoint_resource_type in requires_policy:
+        if (
+            endpoint_resource_type in requires_policy
+            and auth_type == ADTEndpointAuthType.keybased
+        ):
             if not endpoint_resource_policy:
                 raise CLIError(
-                    "Endpoint resources of type {} require a policy name.".format(
+                    "Endpoint resources of type {} require a policy name when using Key based integration.".format(
                         " or ".join(map(str, requires_policy))
                     )
                 )
@@ -306,84 +305,51 @@ class ResourceProvider(DigitalTwinsResourceManager):
         if not resource_group_name:
             resource_group_name = self.get_rg(target_instance)
 
-        cli = EmbeddedCLI()
-        error_prefix = "Could not create ADT instance endpoint. Unable to retrieve"
-
         properties = {}
 
+        # TODO: Implement higher lvl component eliminating need for derived BaseEndpointBuilder's
         if endpoint_resource_type == ADTEndpointType.eventgridtopic:
-            eg_topic_keys_op = cli.invoke(
-                "eventgrid topic key list -n {} -g {}".format(
-                    endpoint_resource_name, endpoint_resource_group
-                ),
-                subscription=endpoint_subscription,
+            from azext_iot.digitaltwins.providers.endpoint.builders import (
+                EventGridEndpointBuilder,
             )
-            if not eg_topic_keys_op.success():
-                raise CLIError("{} Event Grid topic keys.".format(error_prefix))
-            eg_topic_keys = eg_topic_keys_op.as_json()
 
-            eg_topic_endpoint_op = cli.invoke(
-                "eventgrid topic show -n {} -g {}".format(
-                    endpoint_resource_name, endpoint_resource_group
-                ),
-                subscription=endpoint_subscription,
-            )
-            if not eg_topic_endpoint_op.success():
-                raise CLIError("{} Event Grid topic endpoint.".format(error_prefix))
-            eg_topic_endpoint = eg_topic_endpoint_op.as_json()
-
-            properties = EventGridEndpointProperties(
-                access_key1=eg_topic_keys["key1"],
-                access_key2=eg_topic_keys["key2"],
+            properties = EventGridEndpointBuilder(
+                endpoint_resource_name=endpoint_resource_name,
+                endpoint_resource_group=endpoint_resource_group,
+                auth_type=auth_type,
                 dead_letter_secret=dead_letter_endpoint,
-                topic_endpoint=eg_topic_endpoint["endpoint"],
-            )
+                endpoint_subscription=endpoint_subscription,
+            ).build_endpoint()
 
         elif endpoint_resource_type == ADTEndpointType.servicebus:
-            sb_topic_keys_op = cli.invoke(
-                "servicebus topic authorization-rule keys list -n {} "
-                "--namespace-name {} -g {} --topic-name {}".format(
-                    endpoint_resource_policy,
-                    endpoint_resource_namespace,
-                    endpoint_resource_group,
-                    endpoint_resource_name,
-                ),
-                subscription=endpoint_subscription,
+            from azext_iot.digitaltwins.providers.endpoint.builders import (
+                ServiceBusEndpointBuilder,
             )
-            if not sb_topic_keys_op.success():
-                raise CLIError("{} Service Bus topic keys.".format(error_prefix))
-            sb_topic_keys = sb_topic_keys_op.as_json()
 
-            properties = ServiceBusEndpointProperties(
-                primary_connection_string=sb_topic_keys["primaryConnectionString"],
-                secondary_connection_string=sb_topic_keys["secondaryConnectionString"],
+            properties = ServiceBusEndpointBuilder(
+                endpoint_resource_name=endpoint_resource_name,
+                endpoint_resource_group=endpoint_resource_group,
+                auth_type=auth_type,
                 dead_letter_secret=dead_letter_endpoint,
-            )
+                endpoint_subscription=endpoint_subscription,
+                endpoint_resource_namespace=endpoint_resource_namespace,
+                endpoint_resource_policy=endpoint_resource_policy,
+            ).build_endpoint()
 
         elif endpoint_resource_type == ADTEndpointType.eventhub:
-            eventhub_topic_keys_op = cli.invoke(
-                "eventhubs eventhub authorization-rule keys list -n {} "
-                "--namespace-name {} -g {} --eventhub-name {}".format(
-                    endpoint_resource_policy,
-                    endpoint_resource_namespace,
-                    endpoint_resource_group,
-                    endpoint_resource_name,
-                ),
-                subscription=endpoint_subscription,
+            from azext_iot.digitaltwins.providers.endpoint.builders import (
+                EventHubEndpointBuilder,
             )
-            if not eventhub_topic_keys_op.success():
-                raise CLIError("{} Event Hub keys.".format(error_prefix))
-            eventhub_topic_keys = eventhub_topic_keys_op.as_json()
 
-            properties = EventHubEndpointProperties(
-                connection_string_primary_key=eventhub_topic_keys[
-                    "primaryConnectionString"
-                ],
-                connection_string_secondary_key=eventhub_topic_keys[
-                    "secondaryConnectionString"
-                ],
+            properties = EventHubEndpointBuilder(
+                endpoint_resource_name=endpoint_resource_name,
+                endpoint_resource_group=endpoint_resource_group,
+                auth_type=auth_type,
                 dead_letter_secret=dead_letter_endpoint,
-            )
+                endpoint_subscription=endpoint_subscription,
+                endpoint_resource_namespace=endpoint_resource_namespace,
+                endpoint_resource_policy=endpoint_resource_policy,
+            ).build_endpoint()
 
         try:
             return self.mgmt_sdk.digital_twins_endpoint.create_or_update(
