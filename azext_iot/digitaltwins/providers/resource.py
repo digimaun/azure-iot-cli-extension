@@ -262,7 +262,6 @@ class ResourceProvider(DigitalTwinsResourceManager):
         except ErrorResponseException as e:
             raise CLIError(unpack_msrest_error(e))
 
-    # TODO: Breakout and refactor
     def add_endpoint(
         self,
         name,
@@ -273,17 +272,18 @@ class ResourceProvider(DigitalTwinsResourceManager):
         endpoint_resource_policy=None,
         endpoint_resource_namespace=None,
         endpoint_subscription=None,
-        dead_letter_endpoint=None,
+        dead_letter_uri=None,
+        dead_letter_secret=None,
         resource_group_name=None,
         timeout=20,
         auth_type=None,
     ):
         from azext_iot.digitaltwins.common import ADTEndpointType
 
-        requires_policy = [ADTEndpointType.eventhub, ADTEndpointType.servicebus]
+        requires_policy = [ADTEndpointType.eventhub.value, ADTEndpointType.servicebus.value]
         if (
             endpoint_resource_type in requires_policy
-            and auth_type == ADTEndpointAuthType.keybased
+            and auth_type == ADTEndpointAuthType.keybased.value
         ):
             if not endpoint_resource_policy:
                 raise CLIError(
@@ -299,57 +299,30 @@ class ResourceProvider(DigitalTwinsResourceManager):
                     )
                 )
 
+        if dead_letter_uri and auth_type == ADTEndpointAuthType.keybased.value:
+            raise CLIError("Use --deadletter-sas-uri to support deadletter for a Key based endpoint.")
+
+        if dead_letter_secret and auth_type == ADTEndpointAuthType.identitybased.value:
+            raise CLIError("Use --deadletter-uri to support deadletter for an Identity based endpoint.")
+
         target_instance = self.find_instance(
             name=name, resource_group_name=resource_group_name
         )
         if not resource_group_name:
             resource_group_name = self.get_rg(target_instance)
 
-        properties = {}
-
-        # TODO: Implement higher lvl component eliminating need for derived BaseEndpointBuilder's
-        if endpoint_resource_type == ADTEndpointType.eventgridtopic:
-            from azext_iot.digitaltwins.providers.endpoint.builders import (
-                EventGridEndpointBuilder,
-            )
-
-            properties = EventGridEndpointBuilder(
-                endpoint_resource_name=endpoint_resource_name,
-                endpoint_resource_group=endpoint_resource_group,
-                auth_type=auth_type,
-                dead_letter_secret=dead_letter_endpoint,
-                endpoint_subscription=endpoint_subscription,
-            ).build_endpoint()
-
-        elif endpoint_resource_type == ADTEndpointType.servicebus:
-            from azext_iot.digitaltwins.providers.endpoint.builders import (
-                ServiceBusEndpointBuilder,
-            )
-
-            properties = ServiceBusEndpointBuilder(
-                endpoint_resource_name=endpoint_resource_name,
-                endpoint_resource_group=endpoint_resource_group,
-                auth_type=auth_type,
-                dead_letter_secret=dead_letter_endpoint,
-                endpoint_subscription=endpoint_subscription,
-                endpoint_resource_namespace=endpoint_resource_namespace,
-                endpoint_resource_policy=endpoint_resource_policy,
-            ).build_endpoint()
-
-        elif endpoint_resource_type == ADTEndpointType.eventhub:
-            from azext_iot.digitaltwins.providers.endpoint.builders import (
-                EventHubEndpointBuilder,
-            )
-
-            properties = EventHubEndpointBuilder(
-                endpoint_resource_name=endpoint_resource_name,
-                endpoint_resource_group=endpoint_resource_group,
-                auth_type=auth_type,
-                dead_letter_secret=dead_letter_endpoint,
-                endpoint_subscription=endpoint_subscription,
-                endpoint_resource_namespace=endpoint_resource_namespace,
-                endpoint_resource_policy=endpoint_resource_policy,
-            ).build_endpoint()
+        from azext_iot.digitaltwins.providers.endpoint.builders import build_endpoint
+        properties = build_endpoint(
+            endpoint_resource_type=endpoint_resource_type,
+            endpoint_resource_name=endpoint_resource_name,
+            endpoint_resource_group=endpoint_resource_group,
+            endpoint_subscription=endpoint_subscription,
+            endpoint_resource_namespace=endpoint_resource_namespace,
+            endpoint_resource_policy=endpoint_resource_policy,
+            auth_type=auth_type,
+            dead_letter_secret=dead_letter_secret,
+            dead_letter_uri=dead_letter_uri,
+        )
 
         try:
             return self.mgmt_sdk.digital_twins_endpoint.create_or_update(

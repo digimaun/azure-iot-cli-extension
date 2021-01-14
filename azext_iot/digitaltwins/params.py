@@ -127,9 +127,15 @@ def load_digitaltwins_arguments(self, _):
 
     with self.argument_context("dt endpoint create") as context:
         context.argument(
-            "dead_letter_endpoint",
+            "dead_letter_secret",
             options_list=["--deadletter-sas-uri", "--dsu"],
-            help="Dead-letter storage container URL with SAS token",
+            help="Dead-letter storage container URL with SAS token for Key based authentication.",
+            arg_group="Dead-letter Endpoint"
+        )
+        context.argument(
+            "dead_letter_uri",
+            options_list=["--deadletter-uri", "--du"],
+            help="Dead-letter storage container URL for Identity based authentication.",
             arg_group="Dead-letter Endpoint"
         )
         context.argument(
@@ -170,7 +176,7 @@ def load_digitaltwins_arguments(self, _):
         context.argument(
             "eventhub_policy",
             options_list=["--eventhub-policy", "--ehp"],
-            help="EventHub policy to use for endpoint configuration.",
+            help="EventHub policy to use for endpoint configuration. Required when --auth-type is KeyBased.",
             arg_group="Event Hub",
         )
         context.argument(
@@ -203,7 +209,7 @@ def load_digitaltwins_arguments(self, _):
         context.argument(
             "servicebus_policy",
             options_list=["--servicebus-policy", "--sbp"],
-            help="ServiceBus Topic policy to use for endpoint configuration.",
+            help="ServiceBus Topic policy to use for endpoint configuration. Required when --auth-type is KeyBased.",
             arg_group="Service Bus Topic",
         )
         context.argument(

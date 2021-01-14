@@ -72,9 +72,12 @@ def load_digitaltwins_help():
         short-summary: Delete an existing Digital Twins instance.
 
         examples:
-        - name: Delete an arbitrary instance.
+        - name: Delete an arbitrary instance in blocking fashion with a confirmation prompt.
           text: >
             az dt delete -n {instance_name}
+        - name: Delete an arbitrary instance with no blocking or prompt.
+          text: >
+            az dt delete -n {instance_name} -y --no-wait
     """
 
     helps["dt endpoint"] = """
@@ -158,9 +161,12 @@ def load_digitaltwins_help():
         short-summary: Remove an endpoint from a Digital Twins instance.
 
         examples:
-        - name: Remove an endpoint from an instance.
+        - name: Remove an endpoint from an instance and block until the operation is complete.
           text: >
             az dt endpoint delete -n {instance_name} --endpoint-name {endpoint_name}
+        - name: Remove an endpoint from an instance without confirmation or blocking.
+          text: >
+            az dt endpoint delete -n {instance_name} --endpoint-name {endpoint_name} -y --no-wait
     """
 
     helps["dt role-assignment"] = """

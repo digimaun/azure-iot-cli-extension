@@ -19,8 +19,6 @@ from azext_iot.sdk.digitaltwins.controlplane.models import (
 logger = get_logger(__name__)
 
 
-# TODO: Implement higher lvl component eliminating need for derived BaseEndpointBuilder's
-
 class BaseEndpointBuilder(ABC):
     def __init__(
         self,
@@ -28,6 +26,7 @@ class BaseEndpointBuilder(ABC):
         endpoint_resource_group: str,
         auth_type: str = ADTEndpointAuthType.keybased.value,
         dead_letter_secret: str = None,
+        dead_letter_uri: str = None,
         endpoint_subscription: str = None,
     ):
         self.cli = EmbeddedCLI()
@@ -37,6 +36,7 @@ class BaseEndpointBuilder(ABC):
         self.endpoint_subscription = endpoint_subscription
         self.auth_type = auth_type
         self.dead_letter_secret = dead_letter_secret
+        self.dead_letter_uri = dead_letter_uri
 
     def build_endpoint(self):
         endpoint_properties = (
@@ -63,6 +63,7 @@ class EventGridEndpointBuilder(BaseEndpointBuilder):
         endpoint_resource_group,
         auth_type=ADTEndpointAuthType.keybased.value,
         dead_letter_secret=None,
+        dead_letter_uri=None,
         endpoint_subscription=None,
     ):
         super().__init__(
@@ -70,6 +71,7 @@ class EventGridEndpointBuilder(BaseEndpointBuilder):
             endpoint_resource_group=endpoint_resource_group,
             auth_type=auth_type,
             dead_letter_secret=dead_letter_secret,
+            dead_letter_uri=dead_letter_uri,
             endpoint_subscription=endpoint_subscription,
         )
 
@@ -94,15 +96,19 @@ class EventGridEndpointBuilder(BaseEndpointBuilder):
             raise CLIError("{} Event Grid topic endpoint.".format(self.error_prefix))
         eg_topic_endpoint = eg_topic_endpoint_op.as_json()
 
+        # TODO: Potentionally have shared attributes handled by build_endpoint()
         return EventGridEndpointProperties(
             access_key1=eg_topic_keys["key1"],
             access_key2=eg_topic_keys["key2"],
             dead_letter_secret=self.dead_letter_secret,
+            dead_letter_uri=self.dead_letter_uri,
             topic_endpoint=eg_topic_endpoint["endpoint"],
         )
 
     def build_identity_based(self):
-        raise CLIError("Identity based EventGrid endpoint creation is not yet supported. ")
+        raise CLIError(
+            "Identity based EventGrid endpoint creation is not yet supported. "
+        )
 
 
 class ServiceBusEndpointBuilder(BaseEndpointBuilder):
@@ -114,6 +120,7 @@ class ServiceBusEndpointBuilder(BaseEndpointBuilder):
         endpoint_resource_policy,
         auth_type=ADTEndpointAuthType.keybased.value,
         dead_letter_secret=None,
+        dead_letter_uri=None,
         endpoint_subscription=None,
     ):
         super().__init__(
@@ -121,6 +128,7 @@ class ServiceBusEndpointBuilder(BaseEndpointBuilder):
             endpoint_resource_group=endpoint_resource_group,
             auth_type=auth_type,
             dead_letter_secret=dead_letter_secret,
+            dead_letter_uri=dead_letter_uri,
             endpoint_subscription=endpoint_subscription,
         )
         self.endpoint_resource_namespace = endpoint_resource_namespace
@@ -137,7 +145,6 @@ class ServiceBusEndpointBuilder(BaseEndpointBuilder):
             ),
             subscription=self.endpoint_subscription,
         )
-
         if not sb_topic_keys_op.success():
             raise CLIError("{} Service Bus topic keys.".format(self.error_prefix))
         sb_topic_keys = sb_topic_keys_op.as_json()
@@ -146,6 +153,7 @@ class ServiceBusEndpointBuilder(BaseEndpointBuilder):
             primary_connection_string=sb_topic_keys["primaryConnectionString"],
             secondary_connection_string=sb_topic_keys["secondaryConnectionString"],
             dead_letter_secret=self.dead_letter_secret,
+            dead_letter_uri=self.dead_letter_uri,
         )
 
     def build_identity_based(self):
@@ -156,18 +164,29 @@ class ServiceBusEndpointBuilder(BaseEndpointBuilder):
             ),
             subscription=self.endpoint_subscription,
         )
-
         if not sb_namespace_op.success():
             raise CLIError("{} Service Bus Namespace.".format(self.error_prefix))
         sb_namespace_meta = sb_namespace_op.as_json()
         sb_endpoint = sb_namespace_meta["serviceBusEndpoint"]
 
+        sb_topic_op = self.cli.invoke(
+            "servicebus topic show --name {} --namespace {} -g {}".format(
+                self.endpoint_resource_name,
+                self.endpoint_resource_namespace,
+                self.endpoint_resource_group,
+            ),
+            subscription=self.endpoint_subscription,
+        )
+
+        if not sb_topic_op.success():
+            raise CLIError("{} Service Bus Topic.".format(self.error_prefix))
+
         return ServiceBusEndpointProperties(
             endpoint_uri=transform_sb_hostname_to_schemauri(sb_endpoint),
             entity_path=self.endpoint_resource_name,
             dead_letter_secret=self.dead_letter_secret,
+            dead_letter_uri=self.dead_letter_uri,
         )
-        # az servicebus namespace show --name 'PaymaunServiceBusNamespace' -g TestCLI
 
 
 class EventHubEndpointBuilder(BaseEndpointBuilder):
@@ -179,6 +198,7 @@ class EventHubEndpointBuilder(BaseEndpointBuilder):
         endpoint_resource_policy,
         auth_type=ADTEndpointAuthType.keybased.value,
         dead_letter_secret=None,
+        dead_letter_uri=None,
         endpoint_subscription=None,
     ):
         super().__init__(
@@ -186,6 +206,7 @@ class EventHubEndpointBuilder(BaseEndpointBuilder):
             endpoint_resource_group=endpoint_resource_group,
             auth_type=auth_type,
             dead_letter_secret=dead_letter_secret,
+            dead_letter_uri=dead_letter_uri,
             endpoint_subscription=endpoint_subscription,
         )
         self.endpoint_resource_namespace = endpoint_resource_namespace
@@ -214,15 +235,96 @@ class EventHubEndpointBuilder(BaseEndpointBuilder):
                 "secondaryConnectionString"
             ],
             dead_letter_secret=self.dead_letter_secret,
+            dead_letter_uri=self.dead_letter_uri,
         )
 
     def build_identity_based(self):
-        raise CLIError("Identity based EventGrid endpoint creation is not yet supported. ")
+        sb_namespace_op = self.cli.invoke(
+            "eventhubs namespace show --name {} -g {}".format(
+                self.endpoint_resource_namespace,
+                self.endpoint_resource_group,
+            ),
+            subscription=self.endpoint_subscription,
+        )
+        if not sb_namespace_op.success():
+            raise CLIError("{} EventHub Namespace.".format(self.error_prefix))
+        sb_namespace_meta = sb_namespace_op.as_json()
+        sb_endpoint = sb_namespace_meta["serviceBusEndpoint"]
+
+        sb_topic_op = self.cli.invoke(
+            "eventhubs eventhub show --name {} --namespace {} -g {}".format(
+                self.endpoint_resource_name,
+                self.endpoint_resource_namespace,
+                self.endpoint_resource_group,
+            ),
+            subscription=self.endpoint_subscription,
+        )
+
+        if not sb_topic_op.success():
+            raise CLIError("{} EventHub.".format(self.error_prefix))
+
+        return ServiceBusEndpointProperties(
+            endpoint_uri=transform_sb_hostname_to_schemauri(sb_endpoint),
+            entity_path=self.endpoint_resource_name,
+            dead_letter_secret=self.dead_letter_secret,
+            dead_letter_uri=self.dead_letter_uri,
+        )
 
 
 def transform_sb_hostname_to_schemauri(endpoint):
     from urllib.parse import urlparse
+
     sb_endpoint_parts = urlparse(endpoint)
     sb_hostname = sb_endpoint_parts.hostname
     sb_schema_uri = "sb://{}/".format(sb_hostname)
     return sb_schema_uri
+
+
+def build_endpoint(
+    endpoint_resource_type: str,
+    endpoint_resource_name: str,
+    endpoint_resource_group: str,
+    auth_type: str = ADTEndpointAuthType.keybased.value,
+    endpoint_resource_namespace: str = None,
+    endpoint_resource_policy: str = None,
+    dead_letter_secret: str = None,
+    dead_letter_uri: str = None,
+    endpoint_subscription: str = None,
+):
+    from azext_iot.digitaltwins.common import ADTEndpointType
+
+    if endpoint_resource_type == ADTEndpointType.eventgridtopic.value:
+        return EventGridEndpointBuilder(
+            endpoint_resource_name=endpoint_resource_name,
+            endpoint_resource_group=endpoint_resource_group,
+            auth_type=auth_type,
+            dead_letter_secret=dead_letter_secret,
+            dead_letter_uri=dead_letter_uri,
+            endpoint_subscription=endpoint_subscription,
+        ).build_endpoint()
+
+    if endpoint_resource_type == ADTEndpointType.servicebus.value:
+        return ServiceBusEndpointBuilder(
+            endpoint_resource_name=endpoint_resource_name,
+            endpoint_resource_group=endpoint_resource_group,
+            auth_type=auth_type,
+            dead_letter_secret=dead_letter_secret,
+            dead_letter_uri=dead_letter_uri,
+            endpoint_subscription=endpoint_subscription,
+            endpoint_resource_namespace=endpoint_resource_namespace,
+            endpoint_resource_policy=endpoint_resource_policy,
+        ).build_endpoint()
+
+    if endpoint_resource_type == ADTEndpointType.eventhub.value:
+        return EventHubEndpointBuilder(
+            endpoint_resource_name=endpoint_resource_name,
+            endpoint_resource_group=endpoint_resource_group,
+            auth_type=auth_type,
+            dead_letter_secret=dead_letter_secret,
+            dead_letter_uri=dead_letter_uri,
+            endpoint_subscription=endpoint_subscription,
+            endpoint_resource_namespace=endpoint_resource_namespace,
+            endpoint_resource_policy=endpoint_resource_policy,
+        ).build_endpoint()
+
+    raise ValueError("{} not supported.".format(endpoint_resource_type))
