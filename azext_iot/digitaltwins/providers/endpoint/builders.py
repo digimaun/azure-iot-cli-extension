@@ -263,7 +263,7 @@ class EventHubEndpointBuilder(BaseEndpointBuilder):
         if not sb_topic_op.success():
             raise CLIError("{} EventHub.".format(self.error_prefix))
 
-        return ServiceBusEndpointProperties(
+        return EventHubEndpointProperties(
             endpoint_uri=transform_sb_hostname_to_schemauri(sb_endpoint),
             entity_path=self.endpoint_resource_name,
             dead_letter_secret=self.dead_letter_secret,

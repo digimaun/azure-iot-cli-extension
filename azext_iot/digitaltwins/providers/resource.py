@@ -47,7 +47,7 @@ class ResourceProvider(DigitalTwinsResourceManager):
 
         try:
             if assign_identity:
-                if any([scopes, role_type]) and not all([scopes, role_type]):
+                if scopes and not role_type:
                     raise CLIError(
                         "Both --scopes and --role values are required when assigning the instance identity."
                     )
@@ -280,30 +280,37 @@ class ResourceProvider(DigitalTwinsResourceManager):
     ):
         from azext_iot.digitaltwins.common import ADTEndpointType
 
-        requires_policy = [ADTEndpointType.eventhub.value, ADTEndpointType.servicebus.value]
-        if (
-            endpoint_resource_type in requires_policy
-            and auth_type == ADTEndpointAuthType.keybased.value
-        ):
-            if not endpoint_resource_policy:
-                raise CLIError(
-                    "Endpoint resources of type {} require a policy name when using Key based integration.".format(
-                        " or ".join(map(str, requires_policy))
-                    )
-                )
-
+        requires_namespace = [
+            ADTEndpointType.eventhub.value,
+            ADTEndpointType.servicebus.value,
+        ]
+        if endpoint_resource_type in requires_namespace:
             if not endpoint_resource_namespace:
                 raise CLIError(
                     "Endpoint resources of type {} require a namespace.".format(
-                        " or ".join(map(str, requires_policy))
+                        " or ".join(map(str, requires_namespace))
+                    )
+                )
+
+            if (
+                auth_type == ADTEndpointAuthType.keybased.value
+                and not endpoint_resource_policy
+            ):
+                raise CLIError(
+                    "Endpoint resources of type {} require a policy name when using Key based integration.".format(
+                        " or ".join(map(str, requires_namespace))
                     )
                 )
 
         if dead_letter_uri and auth_type == ADTEndpointAuthType.keybased.value:
-            raise CLIError("Use --deadletter-sas-uri to support deadletter for a Key based endpoint.")
+            raise CLIError(
+                "Use --deadletter-sas-uri to support deadletter for a Key based endpoint."
+            )
 
         if dead_letter_secret and auth_type == ADTEndpointAuthType.identitybased.value:
-            raise CLIError("Use --deadletter-uri to support deadletter for an Identity based endpoint.")
+            raise CLIError(
+                "Use --deadletter-uri to support deadletter for an Identity based endpoint."
+            )
 
         target_instance = self.find_instance(
             name=name, resource_group_name=resource_group_name
@@ -312,6 +319,7 @@ class ResourceProvider(DigitalTwinsResourceManager):
             resource_group_name = self.get_rg(target_instance)
 
         from azext_iot.digitaltwins.providers.endpoint.builders import build_endpoint
+
         properties = build_endpoint(
             endpoint_resource_type=endpoint_resource_type,
             endpoint_resource_name=endpoint_resource_name,
