@@ -39,7 +39,7 @@ class PrivateEndpointConnectionProperties(ConnectionProperties):
 
     _attribute_map = {
         'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'private_endpoint': {'key': 'privateEndpoint', 'type': 'ConnectionPropertiesPrivateEndpoint'},
+        'private_endpoint': {'key': 'privateEndpoint', 'type': '{str}'},
         'group_ids': {'key': 'groupIds', 'type': '[str]'},
         'private_link_service_connection_state': {'key': 'privateLinkServiceConnectionState', 'type': 'ConnectionPropertiesPrivateLinkServiceConnectionState'},
     }

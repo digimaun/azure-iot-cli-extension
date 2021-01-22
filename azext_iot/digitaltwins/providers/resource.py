@@ -3,14 +3,20 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
-from azext_iot.digitaltwins.common import ADTEndpointAuthType
+from azext_iot.digitaltwins.common import (
+    ADTEndpointAuthType,
+    ADTPublicNetworkAccessType,
+)
 from azext_iot.digitaltwins.providers import (
     DigitalTwinsResourceManager,
     CloudError,
     ErrorResponseException,
 )
 from azext_iot.digitaltwins.providers.rbac import RbacProvider
-from azext_iot.sdk.digitaltwins.controlplane.models import DigitalTwinsDescription
+from azext_iot.sdk.digitaltwins.controlplane.models import (
+    DigitalTwinsDescription,
+    private_endpoint,
+)
 from azext_iot.common.utility import unpack_msrest_error
 from knack.util import CLIError
 from knack.log import get_logger
@@ -34,6 +40,7 @@ class ResourceProvider(DigitalTwinsResourceManager):
         assign_identity=None,
         scopes=None,
         role_type="Contributor",
+        public_network_access=ADTPublicNetworkAccessType.enabled.value,
     ):
         if not location:
             from azext_iot.common.embedded_cli import EmbeddedCLI
@@ -56,6 +63,7 @@ class ResourceProvider(DigitalTwinsResourceManager):
                 location=location,
                 tags=tags,
                 identity={"type": "SystemAssigned" if assign_identity else "None"},
+                public_network_access=public_network_access,
             )
             create_or_update = self.mgmt_sdk.digital_twins.create_or_update(
                 resource_name=name,
@@ -340,5 +348,151 @@ class ResourceProvider(DigitalTwinsResourceManager):
                 properties=properties,
                 long_running_operation_timeout=timeout,
             )
+        except ErrorResponseException as e:
+            raise CLIError(unpack_msrest_error(e))
+
+    def get_private_link(self, name, link_name, resource_group_name=None):
+        target_instance = self.find_instance(
+            name=name, resource_group_name=resource_group_name
+        )
+        if not resource_group_name:
+            resource_group_name = self.get_rg(target_instance)
+
+        try:
+            return self.mgmt_sdk.private_link_resources.get(
+                resource_group_name=resource_group_name,
+                resource_name=name,
+                resource_id=link_name,
+                raw=True,
+            ).response.json()
+        except ErrorResponseException as e:
+            raise CLIError(unpack_msrest_error(e))
+
+    def list_private_links(self, name, resource_group_name=None):
+        target_instance = self.find_instance(
+            name=name, resource_group_name=resource_group_name
+        )
+        if not resource_group_name:
+            resource_group_name = self.get_rg(target_instance)
+
+        try:
+            # This resource is not paged though it may have been the intent.
+            link_collection = self.mgmt_sdk.private_link_resources.list(
+                resource_group_name=resource_group_name, resource_name=name, raw=True
+            ).response.json()
+            return link_collection.get("value", [])
+        except ErrorResponseException as e:
+            raise CLIError(unpack_msrest_error(e))
+
+    def create_private_connection(
+        self,
+        name,
+        conn_name,
+        status,
+        description,
+        group_ids=None,
+        resource_group_name=None,
+    ):
+        target_instance = self.find_instance(
+            name=name, resource_group_name=resource_group_name
+        )
+        if not resource_group_name:
+            resource_group_name = self.get_rg(target_instance)
+        from azext_iot.sdk.digitaltwins.controlplane.models import (
+            PrivateEndpointConnectionProperties,
+        )
+
+        """
+        properties={
+            "privateEndpointConnection": {
+                "properties": {
+                    "privateLinkServiceConnectionState": {
+                        "status": status,
+                        "description": description,
+                    }
+                }
+            }
+        },
+        """
+        # {"properties": {"groupIds": ["a", "b", "c"], "privateLinkServiceConnectionState": {"status": "Approved", "description": "Legit conn"}}}
+
+        """
+        properties=PrivateEndpointConnectionProperties(
+            group_ids=group_ids,
+            private_link_service_connection_state={
+                "status": status,
+                "description": description,
+            },
+        ),
+        """
+
+        '''
+        {"properties": {
+            "privateEndpoint": {
+                "id": ""
+            }, 
+            "groupIds": ["digitalTwinsInstance"],
+            "privateLinkServiceConnectionState": {"status": "Approved", "description": "Legit conn"}
+            }
+        }
+        '''
+
+
+        if not group_ids:
+            group_ids = []
+
+        import pdb
+
+        pdb.set_trace()
+        try:
+            return self.mgmt_sdk.private_endpoint_connections.create_or_update(
+                resource_group_name=resource_group_name,
+                resource_name=name,
+                private_endpoint_connection_name=conn_name,
+                properties={
+                    "privateEndpoint": {
+                        "id": ""
+                    },
+                    "privateLinkServiceConnectionState": {
+                        "status": status,
+                        "description": description,
+                    },
+                    "groupIds": group_ids,
+                },
+            )
+
+        except ErrorResponseException as e:
+            raise CLIError(unpack_msrest_error(e))
+
+    def get_private_connection(self, name, conn_name, resource_group_name=None):
+        target_instance = self.find_instance(
+            name=name, resource_group_name=resource_group_name
+        )
+        if not resource_group_name:
+            resource_group_name = self.get_rg(target_instance)
+
+        try:
+            return self.mgmt_sdk.private_endpoint_connections.get(
+                resource_group_name=resource_group_name,
+                resource_name=name,
+                private_endpoint_connection_name=conn_name,
+                raw=True,
+            ).response.json()
+        except ErrorResponseException as e:
+            raise CLIError(unpack_msrest_error(e))
+
+    def list_private_connections(self, name, resource_group_name=None):
+        target_instance = self.find_instance(
+            name=name, resource_group_name=resource_group_name
+        )
+        if not resource_group_name:
+            resource_group_name = self.get_rg(target_instance)
+
+        try:
+            # This resource is not paged though it may have been the intent.
+            endpoint_collection = self.mgmt_sdk.private_endpoint_connections.list(
+                resource_group_name=resource_group_name, resource_name=name, raw=True
+            ).response.json()
+            return endpoint_collection.get("value", [])
         except ErrorResponseException as e:
             raise CLIError(unpack_msrest_error(e))

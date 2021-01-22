@@ -209,6 +209,51 @@ def load_digitaltwins_help():
             az dt endpoint delete -n {instance_name} --endpoint-name {endpoint_name} -y --no-wait
     """
 
+    helps["dt network"] = """
+        type: group
+        short-summary: Manage Digital Twins network configuration including private links and endpoint connections.
+    """
+
+    helps["dt network private-link"] = """
+        type: group
+        short-summary: Manage Digital Twins instance private-link operations.
+    """
+
+    helps["dt network private-link show"] = """
+        type: command
+        short-summary: Show a private-link associated with the instance.
+
+        examples:
+        - name: Show the private-link named "API" associated with the instance.
+          text: >
+            az dt network private-link show -n {instance_name} --link-name API
+    """
+
+    helps["dt network private-link list"] = """
+        type: command
+        short-summary: List private-links associated with the Digital Twins instance.
+
+        examples:
+        - name: List all private-links associated with the instance.
+          text: >
+            az dt network private-link list -n {instance_name}
+    """
+
+    helps["dt network private-conn"] = """
+        type: group
+        short-summary: Manage Digital Twins instance private-connection operations.
+    """
+
+    helps["dt network private-conn list"] = """
+        type: command
+        short-summary: List private-connections associated with the Digital Twins instance.
+
+        examples:
+        - name: List all private-connections associated with the instance.
+          text: >
+            az dt network private-conn list -n {instance_name}
+    """
+
     helps["dt role-assignment"] = """
         type: group
         short-summary: Manage RBAC role assignments for a Digital Twins instance.
