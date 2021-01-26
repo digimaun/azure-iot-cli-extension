@@ -239,19 +239,59 @@ def load_digitaltwins_help():
             az dt network private-link list -n {instance_name}
     """
 
-    helps["dt network private-conn"] = """
+    helps["dt network private-endpoint"] = """
         type: group
-        short-summary: Manage Digital Twins instance private-connection operations.
+        short-summary: Manage Digital Twins instance private-endpoints.
+        long-summary: Use 'az network private-endpoint create' to create a private-endpoint and link to a Digital Twins resource.
     """
 
-    helps["dt network private-conn list"] = """
+    helps["dt network private-endpoint connection"] = """
+        type: group
+        short-summary: Manage Digital Twins instance private-endpoint connections.
+    """
+
+    helps["dt network private-endpoint connection list"] = """
         type: command
-        short-summary: List private-connections associated with the Digital Twins instance.
+        short-summary: List private-endpoint connections associated with the Digital Twins instance.
 
         examples:
-        - name: List all private-connections associated with the instance.
+        - name: List all private-endpoint connections associated with the instance.
           text: >
-            az dt network private-conn list -n {instance_name}
+            az dt network private-endpoint list -n {instance_name}
+    """
+
+    helps["dt network private-endpoint connection show"] = """
+        type: command
+        short-summary: Show a private-endpoint connection associated with the Digital Twins instance.
+
+        examples:
+        - name: Show details of the private-endpoint connection named ba8408b6-1372-41b2-aef8-af43afc4729f.
+          text: >
+            az dt network private-endpoint connection show -n {instance_name} --cn ba8408b6-1372-41b2-aef8-af43afc4729f
+    """
+
+    helps["dt network private-endpoint connection set"] = """
+        type: command
+        short-summary: Set the state of a private-endpoint connection associated with the Digital Twins instance.
+
+        examples:
+        - name: Show the private-endpoint named  all private-endpoint connections associated with the instance.
+          text: >
+            az dt network private-endpoint connection set -n {instance_name} --cn {connection_name}
+    """
+
+    helps["dt network private-endpoint connection delete"] = """
+        type: command
+        short-summary: Delete a private-endpoint connection associated with the Digital Twins instance.
+
+        examples:
+        - name: Delete the private-endpoint connection named ba8408b6-1372-41b2-aef8-af43afc4729f with confirmation. Block until finished.
+          text: >
+            az dt network private-endpoint connection set -n {instance_name} --cn ba8408b6-1372-41b2-aef8-af43afc4729f
+
+        - name: Delete the private-endpoint connection named ba8408b6-1372-41b2-aef8-af43afc4729f no confirmation. Return immediately.
+          text: >
+            az dt network private-endpoint connection set -n {instance_name} --cn ba8408b6-1372-41b2-aef8-af43afc4729f -y --no-wait
     """
 
     helps["dt role-assignment"] = """

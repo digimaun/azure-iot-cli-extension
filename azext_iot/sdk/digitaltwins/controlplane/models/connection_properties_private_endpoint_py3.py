@@ -23,7 +23,7 @@ class ConnectionPropertiesPrivateEndpoint(PrivateEndpoint):
     """
 
     _validation = {
-        #'id': {'readonly': True}, @digimaun
+        'id': {'readonly': True},
     }
 
     _attribute_map = {

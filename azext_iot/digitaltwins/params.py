@@ -18,7 +18,7 @@ from azure.cli.core.commands.parameters import (
 from azext_iot.digitaltwins.common import (
     ADTEndpointAuthType,
     ADTPrivateConnectionStatusType,
-    ADTPublicNetworkAccessType
+    ADTPublicNetworkAccessType,
 )
 
 depfor_type = CLIArgumentType(
@@ -373,32 +373,26 @@ def load_digitaltwins_arguments(self, _):
             arg_type=depfor_type,
         )
 
-    with self.argument_context("dt network") as context:
+    with self.argument_context("dt network private-link") as context:
         context.argument(
             "link_name",
             options_list=["--link-name", "--ln"],
             help="Private link name.",
-            arg_group="Private Connection"
+            arg_group="Private Connection",
         )
 
-    with self.argument_context("dt network") as context:
-        context.argument(
-            "link_name",
-            options_list=["--link-name", "--ln"],
-            help="Private link name.",
-            arg_group="Private Connection"
-        )
+    with self.argument_context("dt network private-endpoint") as context:
         context.argument(
             "conn_name",
             options_list=["--conn-name", "--cn"],
-            help="Private connection name.",
-            arg_group="Private Connection"
+            help="Private endpoint connection name.",
+            arg_group="Private-Endpoint",
         )
         context.argument(
             "group_ids",
             options_list=["--group-ids"],
-            help="Space seperated list of group ids for the private connection.",
-            arg_group="Private Connection",
+            help="Space seperated list of group ids that the private endpoint should connect to.",
+            arg_group="Private-Endpoint",
             nargs="+",
         )
         context.argument(
@@ -406,11 +400,17 @@ def load_digitaltwins_arguments(self, _):
             options_list=["--status"],
             help="The status of a private endpoint connection.",
             arg_type=get_enum_type(ADTPrivateConnectionStatusType),
-            arg_group="Private Connection"
+            arg_group="Private-Endpoint",
         )
         context.argument(
             "description",
-            options_list=["--description"],
-            help="A description for the private endpoint connection.",
-            arg_group="Private Connection"
+            options_list=["--description", "--desc"],
+            help="Description for the private endpoint connection.",
+            arg_group="Private-Endpoint",
+        )
+        context.argument(
+            "actions_required",
+            options_list=["--actions-required", "--ar"],
+            help="A message indicating if changes on the service provider require any updates on the consumer.",
+            arg_group="Private-Endpoint",
         )

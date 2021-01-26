@@ -152,9 +152,16 @@ def load_digitaltwins_commands(self, _):
         cmd_group.command("list", "list_private_links")
 
     with self.command_group(
-        "dt network private-conn",
+        "dt network private-endpoint",
         command_type=digitaltwins_resource_ops,
     ) as cmd_group:
-        cmd_group.command("create", "create_private_connection")
-        cmd_group.command("show", "show_private_connection")
-        cmd_group.command("list", "list_private_connections")
+        pass
+
+    with self.command_group(
+        "dt network private-endpoint connection",
+        command_type=digitaltwins_resource_ops,
+    ) as cmd_group:
+        cmd_group.command("set", "set_private_endpoint_conn")
+        cmd_group.command("show", "show_private_endpoint_conn")
+        cmd_group.command("list", "list_private_endpoint_conns")
+        cmd_group.command("delete", "delete_private_endpoint_conn", confirmation=True, supports_no_wait=True)

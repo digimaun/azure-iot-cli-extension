@@ -15,7 +15,6 @@ from azext_iot.digitaltwins.providers import (
 from azext_iot.digitaltwins.providers.rbac import RbacProvider
 from azext_iot.sdk.digitaltwins.controlplane.models import (
     DigitalTwinsDescription,
-    private_endpoint,
 )
 from azext_iot.common.utility import unpack_msrest_error
 from knack.util import CLIError
@@ -384,12 +383,13 @@ class ResourceProvider(DigitalTwinsResourceManager):
         except ErrorResponseException as e:
             raise CLIError(unpack_msrest_error(e))
 
-    def create_private_connection(
+    def set_private_endpoint_conn(
         self,
         name,
         conn_name,
         status,
         description,
+        actions_required=None,
         group_ids=None,
         resource_group_name=None,
     ):
@@ -398,64 +398,17 @@ class ResourceProvider(DigitalTwinsResourceManager):
         )
         if not resource_group_name:
             resource_group_name = self.get_rg(target_instance)
-        from azext_iot.sdk.digitaltwins.controlplane.models import (
-            PrivateEndpointConnectionProperties,
-        )
 
-        """
-        properties={
-            "privateEndpointConnection": {
-                "properties": {
-                    "privateLinkServiceConnectionState": {
-                        "status": status,
-                        "description": description,
-                    }
-                }
-            }
-        },
-        """
-        # {"properties": {"groupIds": ["a", "b", "c"], "privateLinkServiceConnectionState": {"status": "Approved", "description": "Legit conn"}}}
-
-        """
-        properties=PrivateEndpointConnectionProperties(
-            group_ids=group_ids,
-            private_link_service_connection_state={
-                "status": status,
-                "description": description,
-            },
-        ),
-        """
-
-        '''
-        {"properties": {
-            "privateEndpoint": {
-                "id": ""
-            }, 
-            "groupIds": ["digitalTwinsInstance"],
-            "privateLinkServiceConnectionState": {"status": "Approved", "description": "Legit conn"}
-            }
-        }
-        '''
-
-
-        if not group_ids:
-            group_ids = []
-
-        import pdb
-
-        pdb.set_trace()
         try:
             return self.mgmt_sdk.private_endpoint_connections.create_or_update(
                 resource_group_name=resource_group_name,
                 resource_name=name,
                 private_endpoint_connection_name=conn_name,
                 properties={
-                    "privateEndpoint": {
-                        "id": ""
-                    },
                     "privateLinkServiceConnectionState": {
                         "status": status,
                         "description": description,
+                        "actions_required": actions_required,
                     },
                     "groupIds": group_ids,
                 },
@@ -464,7 +417,7 @@ class ResourceProvider(DigitalTwinsResourceManager):
         except ErrorResponseException as e:
             raise CLIError(unpack_msrest_error(e))
 
-    def get_private_connection(self, name, conn_name, resource_group_name=None):
+    def get_private_endpoint_conn(self, name, conn_name, resource_group_name=None):
         target_instance = self.find_instance(
             name=name, resource_group_name=resource_group_name
         )
@@ -481,7 +434,7 @@ class ResourceProvider(DigitalTwinsResourceManager):
         except ErrorResponseException as e:
             raise CLIError(unpack_msrest_error(e))
 
-    def list_private_connections(self, name, resource_group_name=None):
+    def list_private_endpoint_conns(self, name, resource_group_name=None):
         target_instance = self.find_instance(
             name=name, resource_group_name=resource_group_name
         )
@@ -494,5 +447,21 @@ class ResourceProvider(DigitalTwinsResourceManager):
                 resource_group_name=resource_group_name, resource_name=name, raw=True
             ).response.json()
             return endpoint_collection.get("value", [])
+        except ErrorResponseException as e:
+            raise CLIError(unpack_msrest_error(e))
+
+    def delete_private_endpoint_conn(self, name, conn_name, resource_group_name=None):
+        target_instance = self.find_instance(
+            name=name, resource_group_name=resource_group_name
+        )
+        if not resource_group_name:
+            resource_group_name = self.get_rg(target_instance)
+
+        try:
+            return self.mgmt_sdk.private_endpoint_connections.delete(
+                resource_group_name=resource_group_name,
+                resource_name=name,
+                private_endpoint_connection_name=conn_name
+            )
         except ErrorResponseException as e:
             raise CLIError(unpack_msrest_error(e))

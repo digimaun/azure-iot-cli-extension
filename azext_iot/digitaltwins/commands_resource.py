@@ -177,36 +177,44 @@ def list_private_links(cmd, name, resource_group_name=None):
     return rp.list_private_links(name=name, resource_group_name=resource_group_name)
 
 
-def create_private_connection(
+def set_private_endpoint_conn(
     cmd,
     name,
     conn_name,
     status,
-    description,
+    description=None,
     group_ids=None,
-    action_required="",
+    actions_required=None,
     resource_group_name=None,
 ):
     rp = ResourceProvider(cmd)
-    return rp.create_private_connection(
+    return rp.set_private_endpoint_conn(
         name=name,
         resource_group_name=resource_group_name,
         conn_name=conn_name,
         status=status,
         description=description,
         group_ids=group_ids,
+        actions_required=actions_required,
     )
 
 
-def show_private_connection(cmd, name, conn_name, resource_group_name=None):
+def show_private_endpoint_conn(cmd, name, conn_name, resource_group_name=None):
     rp = ResourceProvider(cmd)
-    return rp.get_private_connection(
+    return rp.get_private_endpoint_conn(
         name=name, resource_group_name=resource_group_name, conn_name=conn_name
     )
 
 
-def list_private_connections(cmd, name, resource_group_name=None):
+def list_private_endpoint_conns(cmd, name, resource_group_name=None):
     rp = ResourceProvider(cmd)
-    return rp.list_private_connections(
+    return rp.list_private_endpoint_conns(
         name=name, resource_group_name=resource_group_name
+    )
+
+
+def delete_private_endpoint_conn(cmd, name, conn_name, resource_group_name=None):
+    rp = ResourceProvider(cmd)
+    return rp.delete_private_endpoint_conn(
+        name=name, resource_group_name=resource_group_name, conn_name=conn_name
     )
